@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import { provinces } from '../data/provinces';
 ---
 
-<Layout title="MVETT — Espace Modération & Curation">
+<Layout title="MVETT — Curation & Gestion du Diaporama 3D">
   <div class="admin-wrapper" id="adminWrapper">
     
     <!-- Top Navigation Header -->
@@ -39,7 +39,7 @@ import { provinces } from '../data/provinces';
         <div class="gate-badge">Accès Réservé</div>
         <h1 class="gate-title">Espace Curation du Patrimoine</h1>
         <p class="gate-desc">
-          Cet espace permet d'examiner et de valider les photographies citoyennes avant leur diffusion officielle dans le grand diaporama 3D des 9 provinces du Gabon.
+          Cet espace permet de gérer l'ensemble des œuvres du diaporama 3D, de réordonner les photos des 9 provinces, d'ajouter de nouveaux clichés officiels et de modérer les contributions citoyennes.
         </p>
 
         <div class="gate-actions">
@@ -60,87 +60,458 @@ import { provinces } from '../data/provinces';
       </div>
     </section>
 
-    <!-- Tableau de bord de modération (Actif une fois connecté en admin) -->
+    <!-- Tableau de bord complet (Actif une fois connecté en admin) -->
     <main class="admin-dashboard" id="adminDashboard" style="display: none;">
-      
-      <!-- KPI Stats Bar -->
-      <section class="kpi-grid">
-        <div class="kpi-card highlight-pending">
-          <div class="kpi-icon">⏳</div>
-          <div class="kpi-data">
-            <span class="kpi-value" id="countPending">0</span>
-            <span class="kpi-label">À valider (Pending)</span>
-          </div>
-        </div>
 
-        <div class="kpi-card highlight-approved">
-          <div class="kpi-icon">✓</div>
-          <div class="kpi-data">
-            <span class="kpi-value" id="countApproved">0</span>
-            <span class="kpi-label">Diffusées en 3D</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon">📷</div>
-          <div class="kpi-data">
-            <span class="kpi-value" id="countTotal">0</span>
-            <span class="kpi-label">Total Contributions</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon">🇬🇦</div>
-          <div class="kpi-data">
-            <span class="kpi-value">9 / 9</span>
-            <span class="kpi-label">Provinces du Gabon</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Contrôles et Filtres -->
-      <section class="admin-controls">
-        <!-- Filtre Statut -->
-        <div class="status-tabs">
-          <button type="button" class="tab-btn active" data-status="pending">
-            ⏳ En attente <span class="tab-counter" id="tabPendingBadge">0</span>
-          </button>
-          <button type="button" class="tab-btn" data-status="approved">
-            ✓ Approuvées <span class="tab-counter" id="tabApprovedBadge">0</span>
-          </button>
-          <button type="button" class="tab-btn" data-status="all">
-            Toutes les photos
-          </button>
-        </div>
-
-        <!-- Filtre Province -->
-        <div class="province-selector-wrapper">
-          <select id="adminProvinceFilter" class="admin-select">
-            <option value="all">Toutes les provinces (G1 à G9)</option>
-            {provinces.map((prov) => (
-              <option value={prov.id}>
-                {prov.code} — {prov.name} ({prov.capital})
-              </option>
-            ))}
-          </select>
-        </div>
-      </section>
-
-      <!-- Grille des photographies soumises (Taille maîtrisée, pas d'étirement géant) -->
-      <section class="submissions-grid" id="submissionsGrid">
-        <!-- Rempli dynamiquement en JS -->
-      </section>
-
-      <!-- État vide -->
-      <div class="admin-empty-state" id="adminEmptyState" style="display: none;">
-        <div class="empty-icon">🌿</div>
-        <h3 class="empty-title">Aucune photo dans cette catégorie</h3>
-        <p class="empty-desc">Toutes les contributions ont été traitées ou aucune photo ne correspond aux filtres.</p>
+      <!-- Barre de navigation des 2 Espaces Principaux -->
+      <div class="admin-view-nav">
+        <button type="button" class="view-nav-tab active" id="tabNavCatalog" data-view="catalog">
+          <span class="tab-nav-icon">🎨</span>
+          <span class="tab-nav-title">Catalogue Diaporama 3D</span>
+          <span class="tab-nav-badge" id="badgeCatalogActiveCount">0</span>
+        </button>
+        <button type="button" class="view-nav-tab" id="tabNavModeration" data-view="moderation">
+          <span class="tab-nav-icon">⏳</span>
+          <span class="tab-nav-title">Modération Citoyenne</span>
+          <span class="tab-nav-badge pending" id="badgeModerationPendingCount">0</span>
+        </button>
       </div>
+
+      <!-- ======================================================== -->
+      <!-- ESPACE 1 : CATALOGUE & DIAPORAMA 3D -->
+      <!-- ======================================================== -->
+      <section class="admin-view-section" id="sectionCatalog">
+        
+        <!-- Header du Catalogue avec Action "+ Ajouter une œuvre" -->
+        <div class="catalog-section-header">
+          <div>
+            <h2 class="section-heading">Curation & Ordre du Diaporama</h2>
+            <p class="section-subheading">
+              Gérez les œuvres diffusées dans le grand carrousel 3D. Modifiez les textes et couleurs d'ambiance, réordonnez les diapositives par province ou ajoutez de nouvelles images.
+            </p>
+          </div>
+
+          <button type="button" class="btn-add-primary" id="btnOpenAddModal">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>+ Ajouter une photo au Diaporama</span>
+          </button>
+        </div>
+
+        <!-- Filtres du Catalogue -->
+        <div class="catalog-toolbar">
+          <div class="toolbar-left">
+            <div class="segmented-chips">
+              <button type="button" class="chip-btn active" id="chipCatalogActive" data-catalog-status="active">
+                Diffusées en 3D <span class="chip-count" id="countCatalogActive">0</span>
+              </button>
+              <button type="button" class="chip-btn" id="chipCatalogArchived" data-catalog-status="archived">
+                Archivées / Masquées <span class="chip-count" id="countCatalogArchived">0</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <label for="catalogProvinceFilter" class="filter-label">Province :</label>
+            <select id="catalogProvinceFilter" class="admin-select">
+              <option value="all">Toutes les provinces (G1 à G9)</option>
+              {provinces.map((prov) => (
+                <option value={prov.id}>
+                  {prov.code} — {prov.name} ({prov.capital})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <!-- Grille du Catalogue 3D -->
+        <div class="catalog-grid" id="catalogGrid">
+          <!-- Rempli dynamiquement en JS -->
+        </div>
+
+        <!-- État vide Catalogue -->
+        <div class="admin-empty-state" id="catalogEmptyState" style="display: none;">
+          <div class="empty-icon">🖼️</div>
+          <h3 class="empty-title">Aucune photo dans cette sélection</h3>
+          <p class="empty-desc">Aucune photographie ne correspond aux critères de filtre sélectionnés.</p>
+          <button type="button" class="btn-empty-action" id="btnEmptyAddPhoto">+ Ajouter une première photo</button>
+        </div>
+      </section>
+
+
+      <!-- ======================================================== -->
+      <!-- ESPACE 2 : MODÉRATION DES CONTRIBUTIONS CITOYENNES -->
+      <!-- ======================================================== -->
+      <section class="admin-view-section" id="sectionModeration" style="display: none;">
+        
+        <!-- KPI Stats Bar -->
+        <div class="kpi-grid">
+          <div class="kpi-card highlight-pending">
+            <div class="kpi-icon">⏳</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="countPending">0</span>
+              <span class="kpi-label">À valider (Pending)</span>
+            </div>
+          </div>
+
+          <div class="kpi-card highlight-approved">
+            <div class="kpi-icon">✓</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="countApproved">0</span>
+              <span class="kpi-label">Validées Citoyennes</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon">📷</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="countTotal">0</span>
+              <span class="kpi-label">Total Soumissions</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon">🇬🇦</div>
+            <div class="kpi-data">
+              <span class="kpi-value">9 / 9</span>
+              <span class="kpi-label">Provinces du Gabon</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contrôles et Filtres Modération -->
+        <div class="admin-controls">
+          <div class="status-tabs">
+            <button type="button" class="tab-btn active" data-mod-status="pending">
+              ⏳ En attente <span class="tab-counter" id="tabPendingBadge">0</span>
+            </button>
+            <button type="button" class="tab-btn" data-mod-status="approved">
+              ✓ Approuvées <span class="tab-counter" id="tabApprovedBadge">0</span>
+            </button>
+            <button type="button" class="tab-btn" data-mod-status="all">
+              Toutes les soumissions
+            </button>
+          </div>
+
+          <div class="province-selector-wrapper">
+            <select id="adminProvinceFilter" class="admin-select">
+              <option value="all">Toutes les provinces (G1 à G9)</option>
+              {provinces.map((prov) => (
+                <option value={prov.id}>
+                  {prov.code} — {prov.name} ({prov.capital})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <!-- Grille des photographies soumises -->
+        <div class="submissions-grid" id="submissionsGrid">
+          <!-- Rempli dynamiquement en JS -->
+        </div>
+
+        <!-- État vide Modération -->
+        <div class="admin-empty-state" id="adminEmptyState" style="display: none;">
+          <div class="empty-icon">🌿</div>
+          <h3 class="empty-title">Aucune soumission citoyenne en attente</h3>
+          <p class="empty-desc">Toutes les contributions ont été traitées ou aucune photo ne correspond aux filtres.</p>
+        </div>
+      </section>
 
     </main>
 
-    <!-- Modale Studio de Prévisualisation Multi-Écrans (Laptop 16:9 vs Smartphone 9:16) -->
+    <!-- ======================================================== -->
+    <!-- MODALE 1 : AJOUTER UNE PHOTO AU DIAPORAMA 3D -->
+    <!-- ======================================================== -->
+    <div class="admin-modal-backdrop" id="adminAddModalBackdrop" aria-hidden="true">
+      <div class="admin-modal-box" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+        
+        <header class="admin-modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge-pill">Diaporama Officiel</span>
+            <h2 class="modal-main-title" id="addModalTitle">Ajouter une Œuvre au Diaporama</h2>
+          </div>
+          <button type="button" class="btn-close-box" id="btnCloseAddModal" aria-label="Fermer">✕</button>
+        </header>
+
+        <form id="adminAddForm" class="modal-form">
+          <div class="modal-form-body">
+            
+            <!-- Choix de la Province -->
+            <div class="form-group">
+              <label for="addProvinceSelect" class="field-label">Province du Gabon *</label>
+              <select id="addProvinceSelect" class="field-input" required>
+                {provinces.map((prov) => (
+                  <option value={prov.id}>
+                    {prov.code} — {prov.name} ({prov.capital})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <!-- Titre & Lieu -->
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="addTitleInput" class="field-label">Titre de la photographie *</label>
+                <input type="text" id="addTitleInput" class="field-input" placeholder="Ex: Forêt Sacrée des Monts de Cristal" required maxlength="90" />
+              </div>
+              <div class="form-group">
+                <label for="addLocationInput" class="field-label">Lieu géographique précis *</label>
+                <input type="text" id="addLocationInput" class="field-input" placeholder="Ex: Parc National des Monts de Cristal · Estuaire" required maxlength="100" />
+              </div>
+            </div>
+
+            <!-- Légende / Contexte culturel -->
+            <div class="form-group">
+              <label for="addCaptionInput" class="field-label">Légende poétique ou descriptive (Optionnelle)</label>
+              <textarea id="addCaptionInput" class="field-textarea" rows="2" placeholder="Une phrase décrivant l'ambiance, la faune, la flore ou l'histoire ancestrale du lieu..."></textarea>
+            </div>
+
+            <!-- Couleur d'ambiance 3D -->
+            <div class="form-group">
+              <label class="field-label">Couleur d'Ambiance de Fond 3D</label>
+              <p class="field-hint">Teinte atmosphérique qui habille l'arrière-plan lorsque la photo est affichée dans le WebGL.</p>
+              
+              <div class="color-picker-row">
+                <div class="color-presets" id="addColorPresets">
+                  <!-- Swatches injectés dynamiquement -->
+                </div>
+                <div class="custom-color-wrap">
+                  <input type="color" id="addColorNativePicker" value="#1b2c34" class="native-color-picker" />
+                  <input type="text" id="addColorHexInput" value="#1b2c34" class="hex-text-input" maxlength="7" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Onglets Source de l'image (Fichier vs URL) -->
+            <div class="form-group">
+              <label class="field-label">Source de la Photographie *</label>
+              <div class="source-tab-switcher">
+                <button type="button" class="source-tab active" id="btnSourceUrl" data-mode="url">
+                  🔗 Lien URL Direct (Unsplash, CDN...)
+                </button>
+                <button type="button" class="source-tab" id="btnSourceFile" data-mode="file">
+                  📁 Téléverser un Fichier (avec WebP)
+                </button>
+              </div>
+
+              <!-- Option A : Lien URL Direct -->
+              <div class="source-panel" id="panelSourceUrl">
+                <input type="url" id="addUrlInput" class="field-input" placeholder="https://images.unsplash.com/... ou https://..." />
+                <p class="field-hint">Entrez un lien direct vers une image JPG, PNG ou WEBP haute résolution.</p>
+              </div>
+
+              <!-- Option B : Téléversement Fichier -->
+              <div class="source-panel" id="panelSourceFile" style="display: none;">
+                <div class="dropzone" id="addDropzone">
+                  <input type="file" id="addFileInput" class="file-input" accept="image/jpeg,image/png,image/webp" />
+                  <div class="dropzone-body">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p class="dropzone-text">Glissez votre photo ici ou <span>parcourez vos fichiers</span></p>
+                    <span class="dropzone-sub">Compression WebP 2.5K automatique</span>
+                  </div>
+                </div>
+                <div class="compression-status-bar" id="addCompressionStatus" style="display: none;">
+                  <span class="compress-icon">⚡</span>
+                  <span id="addCompressionText">Prêt</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Aperçu instantané -->
+            <div class="image-live-preview-box" id="addImagePreviewBox" style="display: none;">
+              <span class="preview-box-label">Aperçu en direct :</span>
+              <div class="preview-img-frame" id="addPreviewFrame">
+                <img id="addLiveImg" src="" alt="Aperçu" />
+              </div>
+            </div>
+
+          </div>
+
+          <footer class="modal-form-footer">
+            <button type="button" class="btn-modal-cancel" id="btnCancelAddModal">Annuler</button>
+            <button type="submit" class="btn-modal-submit" id="btnSubmitAdd">
+              ✓ Publier immédiatement dans le Diaporama 3D
+            </button>
+          </footer>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODALE 2 : MODIFIER UNE PHOTO DU DIAPORAMA 3D -->
+    <!-- ======================================================== -->
+    <div class="admin-modal-backdrop" id="adminEditModalBackdrop" aria-hidden="true">
+      <div class="admin-modal-box" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+        
+        <header class="admin-modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge-pill edit">Édition d'Œuvre</span>
+            <h2 class="modal-main-title" id="editModalTitle">Modifier les Informations</h2>
+          </div>
+          <button type="button" class="btn-close-box" id="btnCloseEditModal" aria-label="Fermer">✕</button>
+        </header>
+
+        <form id="adminEditForm" class="modal-form">
+          <input type="hidden" id="editPhotoId" />
+
+          <div class="modal-form-body">
+            
+            <!-- Province -->
+            <div class="form-group">
+              <label for="editProvinceSelect" class="field-label">Province réassignée *</label>
+              <select id="editProvinceSelect" class="field-input" required>
+                {provinces.map((prov) => (
+                  <option value={prov.id}>
+                    {prov.code} — {prov.name} ({prov.capital})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <!-- Titre & Lieu -->
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="editTitleInput" class="field-label">Titre de l'œuvre *</label>
+                <input type="text" id="editTitleInput" class="field-input" required maxlength="90" />
+              </div>
+              <div class="form-group">
+                <label for="editLocationInput" class="field-label">Lieu géographique *</label>
+                <input type="text" id="editLocationInput" class="field-input" required maxlength="100" />
+              </div>
+            </div>
+
+            <!-- Légende -->
+            <div class="form-group">
+              <label for="editCaptionInput" class="field-label">Légende / Récit culturel</label>
+              <textarea id="editCaptionInput" class="field-textarea" rows="2"></textarea>
+            </div>
+
+            <!-- Couleur d'ambiance -->
+            <div class="form-group">
+              <label class="field-label">Couleur d'Ambiance de Fond 3D</label>
+              <div class="color-picker-row">
+                <div class="color-presets" id="editColorPresets"></div>
+                <div class="custom-color-wrap">
+                  <input type="color" id="editColorNativePicker" value="#1b2c34" class="native-color-picker" />
+                  <input type="text" id="editColorHexInput" value="#1b2c34" class="hex-text-input" maxlength="7" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Remplacement d'Image (Optionnel) -->
+            <div class="form-group">
+              <label class="field-label">Image Actuelle & Remplacement</label>
+              <div class="edit-current-image-card">
+                <img id="editCurrentImgThumb" src="" alt="" class="current-thumb" />
+                <div class="current-img-meta">
+                  <span class="current-img-status">Image actuellement diffusée</span>
+                  <button type="button" class="btn-toggle-replace-img" id="btnToggleReplaceImg">
+                    🔄 Changer l'image...
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bloc pour fournir une nouvelle image si demandé -->
+              <div class="replace-image-drawer" id="replaceImageDrawer" style="display: none;">
+                <div class="source-tab-switcher">
+                  <button type="button" class="source-tab active" id="btnEditSourceUrl" data-mode="url">
+                    🔗 Nouveau Lien URL
+                  </button>
+                  <button type="button" class="source-tab" id="btnEditSourceFile" data-mode="file">
+                    📁 Nouveau Fichier
+                  </button>
+                </div>
+
+                <div class="source-panel" id="panelEditSourceUrl">
+                  <input type="url" id="editUrlInput" class="field-input" placeholder="https://..." />
+                </div>
+
+                <div class="source-panel" id="panelEditSourceFile" style="display: none;">
+                  <input type="file" id="editFileInput" class="field-input" accept="image/jpeg,image/png,image/webp" />
+                  <div class="compression-status-bar" id="editCompressionStatus" style="display: none;">
+                    <span class="compress-icon">⚡</span>
+                    <span id="editCompressionText">Prêt</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <footer class="modal-form-footer">
+            <button type="button" class="btn-modal-cancel" id="btnCancelEditModal">Annuler</button>
+            <button type="submit" class="btn-modal-submit" id="btnSubmitEdit">
+              💾 Enregistrer les Modifications
+            </button>
+          </footer>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODALE 3 : CONFIRMATION SUPPRESSION OU ARCHIVAGE -->
+    <!-- ======================================================== -->
+    <div class="admin-modal-backdrop" id="adminDeleteModalBackdrop" aria-hidden="true">
+      <div class="admin-modal-box compact" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        
+        <header class="admin-modal-header">
+          <h2 class="modal-main-title danger" id="deleteModalTitle">Retirer du Diaporama</h2>
+          <button type="button" class="btn-close-box" id="btnCloseDeleteModal" aria-label="Fermer">✕</button>
+        </header>
+
+        <div class="delete-modal-body">
+          <div class="delete-photo-summary">
+            <img id="deleteModalThumb" src="" alt="" class="delete-thumb" />
+            <div class="delete-meta">
+              <span class="delete-title" id="deleteModalTitleText">Titre</span>
+              <span class="delete-loc" id="deleteModalLocText">Lieu</span>
+            </div>
+          </div>
+
+          <p class="delete-lead-text">
+            Choisissez l'action à appliquer à cette photographie :
+          </p>
+
+          <div class="delete-choice-cards">
+            <!-- Option 1 : Archiver -->
+            <button type="button" class="choice-card" id="btnChoiceArchive">
+              <div class="choice-icon">📦</div>
+              <div class="choice-content">
+                <strong>Archiver / Masquer (Recommandé)</strong>
+                <p>Retire immédiatement la photo du diaporama 3D public. Vous pourrez la restaurer en 1 clic à tout moment depuis l'onglet "Archivées".</p>
+              </div>
+            </button>
+
+            <!-- Option 2 : Supprimer Définitivement -->
+            <button type="button" class="choice-card danger" id="btnChoicePermanent">
+              <div class="choice-icon">🗑️</div>
+              <div class="choice-content">
+                <strong>Supprimer Définitivement</strong>
+                <p>Efface irrévocablement la photographie de la base de données et du stockage.</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <footer class="modal-form-footer">
+          <button type="button" class="btn-modal-cancel" id="btnCancelDeleteModal">Annuler</button>
+        </footer>
+
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODALE 4 : STUDIO DE PRÉVISUALISATION MULTI-ÉCRANS (3D) -->
+    <!-- ======================================================== -->
     <div class="preview-modal-backdrop" id="previewModalBackdrop" aria-hidden="true">
       <div class="preview-modal-container" role="dialog" aria-modal="true" aria-labelledby="previewModalTitle">
         
@@ -149,8 +520,8 @@ import { provinces } from '../data/provinces';
           <div class="preview-header-info">
             <div class="preview-badge-row">
               <span class="preview-badge-province" id="previewModalProvince">G1 · Estuaire</span>
-              <span class="preview-badge-ratio" id="previewModalRatio">Format : Inconnu</span>
-              <span class="preview-badge-status" id="previewModalStatus">En attente</span>
+              <span class="preview-badge-ratio" id="previewModalRatio">Format : Détection</span>
+              <span class="preview-badge-status" id="previewModalStatus">En ligne</span>
             </div>
             <h2 class="preview-modal-title" id="previewModalTitle">Titre de l'œuvre</h2>
             <p class="preview-modal-location" id="previewModalLocation">Lieu · Auteur</p>
@@ -185,13 +556,10 @@ import { provinces } from '../data/provinces';
           <div class="screen-frame-laptop" id="frameLaptop">
             <div class="laptop-bezel">
               <div class="laptop-display" id="laptopDisplay">
-                <!-- Arrière-plan flouté cinématique (pour photos portrait) -->
                 <div class="laptop-bg-blur" id="laptopBgBlur"></div>
-                <!-- Image Principale centrée -->
                 <div class="laptop-image-holder" id="laptopImageHolder">
                   <img src="" id="laptopMainImg" alt="Prévisualisation Laptop" />
                 </div>
-                <!-- Mockup de HUD Dépoli sur l'écran -->
                 <div class="hud-mock-overlay">
                   <div class="hud-mock-top">
                     <span class="mock-brand">MVETT</span>
@@ -213,7 +581,6 @@ import { provinces } from '../data/provinces';
               <div class="mobile-notch"></div>
               <div class="mobile-display" id="mobileDisplay">
                 <img src="" id="mobileMainImg" alt="Prévisualisation Mobile" />
-                <!-- Mockup HUD Mobile -->
                 <div class="hud-mock-overlay mobile">
                   <div class="hud-mock-top">
                     <span class="mock-brand">MVETT</span>
@@ -230,7 +597,7 @@ import { provinces } from '../data/provinces';
 
         </div>
 
-        <!-- Toolbar d'Actions de Modération -->
+        <!-- Toolbar d'Actions du Studio -->
         <footer class="preview-modal-footer">
           <div class="footer-info">
             <p class="footer-tip" id="previewFormatTip">
@@ -238,13 +605,8 @@ import { provinces } from '../data/provinces';
             </p>
           </div>
 
-          <div class="footer-buttons">
-            <button type="button" class="btn-modal-action-reject" id="btnModalReject">
-              ✕ Rejeter la photo
-            </button>
-            <button type="button" class="btn-modal-action-approve" id="btnModalApprove">
-              ✓ Approuver pour le Diaporama 3D
-            </button>
+          <div class="footer-buttons" id="previewModalButtons">
+            <!-- Rempli dynamiquement selon si photo citoyenne ou officielle -->
           </div>
         </footer>
 
@@ -255,10 +617,12 @@ import { provinces } from '../data/provinces';
 </Layout>
 
 <script>
-  import { photoStore, type CommunityPhoto, type UserProfile } from '../lib/photo-store';
+  import { photoStore, type CommunityPhoto, type UserProfile, DEFAULT_BG_COLORS } from '../lib/photo-store';
   import { provinces } from '../data/provinces';
+  import { compressImage, formatBytes } from '../lib/image-compressor';
 
   document.addEventListener('DOMContentLoaded', async () => {
+    // Éléments généraux & Auth
     const authGate = document.getElementById('adminAuthGate');
     const dashboard = document.getElementById('adminDashboard');
     const userPill = document.getElementById('adminUserPill');
@@ -268,18 +632,99 @@ import { provinces } from '../data/provinces';
     const btnGoogle = document.getElementById('btnAdminGoogle');
     const btnDemo = document.getElementById('btnAdminDemo');
 
+    // Navigation onglets principaux (Catalogue vs Modération)
+    const tabNavCatalog = document.getElementById('tabNavCatalog');
+    const tabNavModeration = document.getElementById('tabNavModeration');
+    const sectionCatalog = document.getElementById('sectionCatalog');
+    const sectionModeration = document.getElementById('sectionModeration');
+    const badgeCatalogActiveCount = document.getElementById('badgeCatalogActiveCount');
+    const badgeModerationPendingCount = document.getElementById('badgeModerationPendingCount');
+
+    // Éléments Catalogue 3D
+    const chipCatalogActive = document.getElementById('chipCatalogActive');
+    const chipCatalogArchived = document.getElementById('chipCatalogArchived');
+    const countCatalogActive = document.getElementById('countCatalogActive');
+    const countCatalogArchived = document.getElementById('countCatalogArchived');
+    const catalogProvinceFilter = document.getElementById('catalogProvinceFilter') as HTMLSelectElement | null;
+    const catalogGrid = document.getElementById('catalogGrid');
+    const catalogEmptyState = document.getElementById('catalogEmptyState');
+    const btnOpenAddModal = document.getElementById('btnOpenAddModal');
+    const btnEmptyAddPhoto = document.getElementById('btnEmptyAddPhoto');
+
+    // Éléments Modération Citoyenne
     const countPending = document.getElementById('countPending');
     const countApproved = document.getElementById('countApproved');
     const countTotal = document.getElementById('countTotal');
     const tabPendingBadge = document.getElementById('tabPendingBadge');
     const tabApprovedBadge = document.getElementById('tabApprovedBadge');
+    const statusTabs = document.querySelectorAll('[data-mod-status]');
+    const moderationProvinceFilter = document.getElementById('adminProvinceFilter') as HTMLSelectElement | null;
+    const submissionsGrid = document.getElementById('submissionsGrid');
+    const moderationEmptyState = document.getElementById('adminEmptyState');
 
-    const statusTabs = document.querySelectorAll('.tab-btn');
-    const provinceFilter = document.getElementById('adminProvinceFilter') as HTMLSelectElement | null;
-    const grid = document.getElementById('submissionsGrid');
-    const emptyState = document.getElementById('adminEmptyState');
+    // Éléments Modale d'Ajout
+    const addModalBackdrop = document.getElementById('adminAddModalBackdrop');
+    const btnCloseAddModal = document.getElementById('btnCloseAddModal');
+    const btnCancelAddModal = document.getElementById('btnCancelAddModal');
+    const adminAddForm = document.getElementById('adminAddForm') as HTMLFormElement | null;
+    const addProvinceSelect = document.getElementById('addProvinceSelect') as HTMLSelectElement | null;
+    const addTitleInput = document.getElementById('addTitleInput') as HTMLInputElement | null;
+    const addLocationInput = document.getElementById('addLocationInput') as HTMLInputElement | null;
+    const addCaptionInput = document.getElementById('addCaptionInput') as HTMLTextAreaElement | null;
+    const addColorPresets = document.getElementById('addColorPresets');
+    const addColorNativePicker = document.getElementById('addColorNativePicker') as HTMLInputElement | null;
+    const addColorHexInput = document.getElementById('addColorHexInput') as HTMLInputElement | null;
+    const btnSourceUrl = document.getElementById('btnSourceUrl');
+    const btnSourceFile = document.getElementById('btnSourceFile');
+    const panelSourceUrl = document.getElementById('panelSourceUrl');
+    const panelSourceFile = document.getElementById('panelSourceFile');
+    const addUrlInput = document.getElementById('addUrlInput') as HTMLInputElement | null;
+    const addFileInput = document.getElementById('addFileInput') as HTMLInputElement | null;
+    const addDropzone = document.getElementById('addDropzone');
+    const addCompressionStatus = document.getElementById('addCompressionStatus');
+    const addCompressionText = document.getElementById('addCompressionText');
+    const addImagePreviewBox = document.getElementById('addImagePreviewBox');
+    const addPreviewFrame = document.getElementById('addPreviewFrame');
+    const addLiveImg = document.getElementById('addLiveImg') as HTMLImageElement | null;
+    const btnSubmitAdd = document.getElementById('btnSubmitAdd') as HTMLButtonElement | null;
 
-    // Éléments du Studio de Prévisualisation Modal
+    // Éléments Modale d'Édition
+    const editModalBackdrop = document.getElementById('adminEditModalBackdrop');
+    const btnCloseEditModal = document.getElementById('btnCloseEditModal');
+    const btnCancelEditModal = document.getElementById('btnCancelEditModal');
+    const adminEditForm = document.getElementById('adminEditForm') as HTMLFormElement | null;
+    const editPhotoId = document.getElementById('editPhotoId') as HTMLInputElement | null;
+    const editProvinceSelect = document.getElementById('editProvinceSelect') as HTMLSelectElement | null;
+    const editTitleInput = document.getElementById('editTitleInput') as HTMLInputElement | null;
+    const editLocationInput = document.getElementById('editLocationInput') as HTMLInputElement | null;
+    const editCaptionInput = document.getElementById('editCaptionInput') as HTMLTextAreaElement | null;
+    const editColorPresets = document.getElementById('editColorPresets');
+    const editColorNativePicker = document.getElementById('editColorNativePicker') as HTMLInputElement | null;
+    const editColorHexInput = document.getElementById('editColorHexInput') as HTMLInputElement | null;
+    const editCurrentImgThumb = document.getElementById('editCurrentImgThumb') as HTMLImageElement | null;
+    const btnToggleReplaceImg = document.getElementById('btnToggleReplaceImg');
+    const replaceImageDrawer = document.getElementById('replaceImageDrawer');
+    const btnEditSourceUrl = document.getElementById('btnEditSourceUrl');
+    const btnEditSourceFile = document.getElementById('btnEditSourceFile');
+    const panelEditSourceUrl = document.getElementById('panelEditSourceUrl');
+    const panelEditSourceFile = document.getElementById('panelEditSourceFile');
+    const editUrlInput = document.getElementById('editUrlInput') as HTMLInputElement | null;
+    const editFileInput = document.getElementById('editFileInput') as HTMLInputElement | null;
+    const editCompressionStatus = document.getElementById('editCompressionStatus');
+    const editCompressionText = document.getElementById('editCompressionText');
+    const btnSubmitEdit = document.getElementById('btnSubmitEdit') as HTMLButtonElement | null;
+
+    // Éléments Modale de Suppression / Archivage
+    const deleteModalBackdrop = document.getElementById('adminDeleteModalBackdrop');
+    const btnCloseDeleteModal = document.getElementById('btnCloseDeleteModal');
+    const btnCancelDeleteModal = document.getElementById('btnCancelDeleteModal');
+    const deleteModalThumb = document.getElementById('deleteModalThumb') as HTMLImageElement | null;
+    const deleteModalTitleText = document.getElementById('deleteModalTitleText');
+    const deleteModalLocText = document.getElementById('deleteModalLocText');
+    const btnChoiceArchive = document.getElementById('btnChoiceArchive');
+    const btnChoicePermanent = document.getElementById('btnChoicePermanent');
+
+    // Éléments Studio de Prévisualisation
     const previewBackdrop = document.getElementById('previewModalBackdrop');
     const btnClosePreview = document.getElementById('btnClosePreviewModal');
     const previewModalProvince = document.getElementById('previewModalProvince');
@@ -292,7 +737,7 @@ import { provinces } from '../data/provinces';
     const frameLaptop = document.getElementById('frameLaptop');
     const frameMobile = document.getElementById('frameMobile');
     const laptopMainImg = document.getElementById('laptopMainImg') as HTMLImageElement | null;
-    const laptopBgBlur = document.getElementById('laptopBgBlur') as HTMLElement | null;
+    const laptopBgBlur = document.getElementById('laptopBgBlur');
     const laptopImageHolder = document.getElementById('laptopImageHolder');
     const laptopMockCounter = document.getElementById('laptopMockCounter');
     const laptopMockTitle = document.getElementById('laptopMockTitle');
@@ -301,26 +746,84 @@ import { provinces } from '../data/provinces';
     const mobileMockTitle = document.getElementById('mobileMockTitle');
     const mobileMockLoc = document.getElementById('mobileMockLoc');
     const previewFormatTip = document.getElementById('previewFormatTip');
-    const btnModalApprove = document.getElementById('btnModalApprove') as HTMLButtonElement | null;
-    const btnModalReject = document.getElementById('btnModalReject') as HTMLButtonElement | null;
+    const previewModalButtons = document.getElementById('previewModalButtons');
 
-    let currentStatusFilter: 'pending' | 'approved' | 'all' = 'pending';
-    let currentProvinceFilter: string = 'all';
+    // État local de l'application
+    let currentMainTab: 'catalog' | 'moderation' = 'catalog';
+    let currentCatalogStatus: 'active' | 'archived' = 'active';
+    let currentCatalogProvince: string = 'all';
+    let currentModStatus: 'pending' | 'approved' | 'all' = 'pending';
+    let currentModProvince: string = 'all';
+
     let currentUser: UserProfile | null = null;
-    let allPhotos: CommunityPhoto[] = [];
+    let allCatalogPhotos: CommunityPhoto[] = [];
+    let allModerationPhotos: CommunityPhoto[] = [];
     let currentPreviewPhoto: CommunityPhoto | null = null;
+    let pendingDeletePhoto: CommunityPhoto | null = null;
 
-    // Vérification session & droits
+    // Fichiers compressés en cache pour upload
+    let addCompressedFile: File | null = null;
+    let editCompressedFile: File | null = null;
+    let addImageMode: 'url' | 'file' = 'url';
+    let editImageMode: 'url' | 'file' = 'url';
+
+    // Initialiser les swatches de couleurs
+    function initColorPickers() {
+      renderSwatches(addColorPresets, addColorNativePicker, addColorHexInput, (color) => {
+        if (addPreviewFrame) addPreviewFrame.style.backgroundColor = color;
+      });
+      renderSwatches(editColorPresets, editColorNativePicker, editColorHexInput);
+    }
+
+    function renderSwatches(
+      container: HTMLElement | null,
+      nativeInput: HTMLInputElement | null,
+      hexInput: HTMLInputElement | null,
+      onChange?: (c: string) => void
+    ) {
+      if (!container || !nativeInput || !hexInput) return;
+      container.innerHTML = DEFAULT_BG_COLORS.map((c) => `
+        <button type="button" class="swatch-btn ${c === nativeInput.value ? 'selected' : ''}" style="background-color: ${c};" data-color="${c}" title="${c}"></button>
+      `).join('');
+
+      container.querySelectorAll('.swatch-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const col = (btn as HTMLElement).getAttribute('data-color');
+          if (col) {
+            nativeInput.value = col;
+            hexInput.value = col;
+            container.querySelectorAll('.swatch-btn').forEach((b) => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            if (onChange) onChange(col);
+          }
+        });
+      });
+
+      nativeInput.addEventListener('input', () => {
+        hexInput.value = nativeInput.value;
+        if (onChange) onChange(nativeInput.value);
+      });
+
+      hexInput.addEventListener('input', () => {
+        if (/^#[0-9A-Fa-f]{6}$/.test(hexInput.value)) {
+          nativeInput.value = hexInput.value;
+          if (onChange) onChange(hexInput.value);
+        }
+      });
+    }
+
+    // ==========================================
+    // AUTHENTIFICATION
+    // ==========================================
     async function checkAuth() {
       currentUser = await photoStore.getCurrentUser();
       renderAuthUI();
-      if (currentUser) {
-        await loadPhotos();
+      if (currentUser && (photoStore.isAdmin(currentUser) || currentUser.isDemo)) {
+        await reloadAllData();
       }
     }
 
     function renderAuthUI() {
-      const isAuth = !!currentUser;
       const isAdmin = currentUser && (photoStore.isAdmin(currentUser) || currentUser.isDemo);
 
       if (isAdmin) {
@@ -336,48 +839,314 @@ import { provinces } from '../data/provinces';
       }
     }
 
-    async function loadPhotos() {
-      allPhotos = await photoStore.getPhotos({ status: 'all' });
-      updateCounts();
-      renderCards();
+    async function reloadAllData() {
+      // 1. Charger tout le catalogue (y compris archivées)
+      allCatalogPhotos = await photoStore.getCatalogPhotos({ includeArchived: true });
+      // 2. Charger les photos de modération
+      allModerationPhotos = await photoStore.getPhotos({ status: 'all' });
+
+      updateCounters();
+      renderCatalogView();
+      renderModerationView();
     }
 
-    function updateCounts() {
-      const pendingList = allPhotos.filter((p) => p.status === 'pending');
-      const approvedList = allPhotos.filter((p) => p.status === 'approved');
+    function updateCounters() {
+      const activeList = allCatalogPhotos.filter((p) => p.status === 'approved');
+      const archivedList = allCatalogPhotos.filter((p) => p.status === 'archived');
+      const pendingList = allModerationPhotos.filter((p) => p.status === 'pending');
+      const approvedModList = allModerationPhotos.filter((p) => p.status === 'approved');
 
+      if (badgeCatalogActiveCount) badgeCatalogActiveCount.textContent = String(activeList.length);
+      if (countCatalogActive) countCatalogActive.textContent = String(activeList.length);
+      if (countCatalogArchived) countCatalogArchived.textContent = String(archivedList.length);
+
+      if (badgeModerationPendingCount) badgeModerationPendingCount.textContent = String(pendingList.length);
       if (countPending) countPending.textContent = String(pendingList.length);
-      if (countApproved) countApproved.textContent = String(approvedList.length);
-      if (countTotal) countTotal.textContent = String(allPhotos.length);
-
+      if (countApproved) countApproved.textContent = String(approvedModList.length);
+      if (countTotal) countTotal.textContent = String(allModerationPhotos.length);
       if (tabPendingBadge) tabPendingBadge.textContent = String(pendingList.length);
-      if (tabApprovedBadge) tabApprovedBadge.textContent = String(approvedList.length);
+      if (tabApprovedBadge) tabApprovedBadge.textContent = String(approvedModList.length);
     }
 
-    function renderCards() {
-      if (!grid || !emptyState) return;
-
-      let filtered = allPhotos;
-
-      // Filtre par statut
-      if (currentStatusFilter !== 'all') {
-        filtered = filtered.filter((p) => p.status === currentStatusFilter);
+    // ==========================================
+    // BASCULE D'ONGLETS PRINCIPAUX
+    // ==========================================
+    function setMainTab(tab: 'catalog' | 'moderation') {
+      currentMainTab = tab;
+      if (tab === 'catalog') {
+        tabNavCatalog?.classList.add('active');
+        tabNavModeration?.classList.remove('active');
+        if (sectionCatalog) sectionCatalog.style.display = 'block';
+        if (sectionModeration) sectionModeration.style.display = 'none';
+      } else {
+        tabNavCatalog?.classList.remove('active');
+        tabNavModeration?.classList.add('active');
+        if (sectionCatalog) sectionCatalog.style.display = 'none';
+        if (sectionModeration) sectionModeration.style.display = 'block';
       }
+    }
 
-      // Filtre par province
-      if (currentProvinceFilter !== 'all') {
-        filtered = filtered.filter((p) => p.province_id === currentProvinceFilter);
+    tabNavCatalog?.addEventListener('click', () => setMainTab('catalog'));
+    tabNavModeration?.addEventListener('click', () => setMainTab('moderation'));
+
+    // ==========================================
+    // RENDU DU CATALOGUE 3D
+    // ==========================================
+    function renderCatalogView() {
+      if (!catalogGrid || !catalogEmptyState) return;
+
+      // Filtrer par statut (actif / archivé)
+      let filtered = allCatalogPhotos.filter((p) => {
+        if (currentCatalogStatus === 'active') return p.status === 'approved';
+        return p.status === 'archived';
+      });
+
+      // Filtrer par province
+      if (currentCatalogProvince !== 'all') {
+        filtered = filtered.filter((p) => p.province_id === currentCatalogProvince);
       }
 
       if (filtered.length === 0) {
-        grid.innerHTML = '';
-        emptyState.style.display = 'flex';
+        catalogGrid.innerHTML = '';
+        catalogEmptyState.style.display = 'flex';
         return;
       }
 
-      emptyState.style.display = 'none';
+      catalogEmptyState.style.display = 'none';
 
-      grid.innerHTML = filtered.map((photo) => {
+      // Grouper par province pour un réordonnancement clair
+      catalogGrid.innerHTML = filtered.map((photo) => {
+        const prov = provinces.find((p) => p.id === photo.province_id);
+        const provName = prov ? `${prov.code} · ${prov.name}` : photo.province_id;
+        const isOfficial = photo.is_official !== false;
+        const isArchived = photo.status === 'archived';
+        const displayOrder = (photo.display_order ?? 0) + 1;
+
+        return `
+          <article class="catalog-card ${isArchived ? 'archived' : ''}" data-photo-id="${photo.id}">
+            <div class="catalog-thumb" data-preview-id="${photo.id}" title="Cliquer pour tester dans le simulateur 3D">
+              <img src="${photo.image_url}" alt="${photo.title}" loading="lazy" class="thumb-img" />
+              
+              <div class="thumb-badges-top">
+                <span class="badge-prov">${provName}</span>
+                <span class="badge-order">#${displayOrder}</span>
+              </div>
+
+              <div class="thumb-badges-bottom">
+                <span class="badge-origin ${isOfficial ? 'official' : 'community'}">
+                  ${isOfficial ? '★ Officielle' : '👥 Citoyenne'}
+                </span>
+                ${isArchived ? '<span class="badge-archived">📦 Archivée</span>' : ''}
+              </div>
+
+              <div class="thumb-overlay-hint">
+                <span>👁 Tester 3D</span>
+              </div>
+            </div>
+
+            <div class="catalog-card-body">
+              <div class="catalog-title-row">
+                <h3 class="catalog-title">${photo.title}</h3>
+                <span class="color-swatch-dot" style="background-color: ${photo.background_color};" title="Fond d'ambiance 3D : ${photo.background_color}"></span>
+              </div>
+
+              <p class="catalog-location">${photo.location}</p>
+              ${photo.caption ? `<p class="catalog-caption">« ${photo.caption} »</p>` : ''}
+
+              <!-- Barre d'ajustement d'ordre de diffusion -->
+              ${!isArchived ? `
+                <div class="order-controls-row">
+                  <span class="order-label">Ordre province :</span>
+                  <div class="order-btns">
+                    <button type="button" class="btn-order-move" data-move-up="${photo.id}" title="Déplacer vers l'avant dans cette province">
+                      ▲ Monter
+                    </button>
+                    <button type="button" class="btn-order-move" data-move-down="${photo.id}" title="Déplacer vers l'arrière dans cette province">
+                      ▼ Descendre
+                    </button>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- Barre d'actions d'édition et suppression -->
+              <div class="catalog-actions-row">
+                <button type="button" class="btn-card-edit" data-edit-id="${photo.id}">
+                  ✏️ Modifier
+                </button>
+                <button type="button" class="btn-card-test" data-preview-id="${photo.id}" title="Prévisualiser sur Laptop & Mobile">
+                  👁 Tester
+                </button>
+
+                ${!isArchived ? `
+                  <button type="button" class="btn-card-archive" data-archive-id="${photo.id}" title="Masquer du diaporama">
+                    📦 Archiver
+                  </button>
+                ` : `
+                  <button type="button" class="btn-card-restore" data-restore-id="${photo.id}" title="Remettre dans le diaporama 3D">
+                    ↺ Restaurer
+                  </button>
+                `}
+
+                <button type="button" class="btn-card-delete" data-delete-id="${photo.id}" title="Supprimer">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      // Attacher les écouteurs du catalogue
+      // 1. Prévisualisation 3D
+      catalogGrid.querySelectorAll('[data-preview-id]').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pId = (el as HTMLElement).getAttribute('data-preview-id');
+          if (pId) {
+            const photo = allCatalogPhotos.find((p) => p.id === pId);
+            if (photo) openPreviewModal(photo);
+          }
+        });
+      });
+
+      // 2. Réordonnancement Monter (Up)
+      catalogGrid.querySelectorAll('[data-move-up]').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-move-up');
+          if (!pId) return;
+          const target = allCatalogPhotos.find((p) => p.id === pId);
+          if (!target) return;
+
+          // Obtenir toutes les photos actives de cette province dans l'ordre actuel
+          const provPhotos = allCatalogPhotos.filter((p) => p.province_id === target.province_id && p.status === 'approved');
+          const currIdx = provPhotos.findIndex((p) => p.id === pId);
+          if (currIdx > 0) {
+            // Échanger avec la précédente
+            const temp = provPhotos[currIdx];
+            provPhotos[currIdx] = provPhotos[currIdx - 1];
+            provPhotos[currIdx - 1] = temp;
+            await photoStore.reorderCatalogPhotos(target.province_id, provPhotos.map((p) => p.id));
+            await reloadAllData();
+          }
+        });
+      });
+
+      // 3. Réordonnancement Descendre (Down)
+      catalogGrid.querySelectorAll('[data-move-down]').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-move-down');
+          if (!pId) return;
+          const target = allCatalogPhotos.find((p) => p.id === pId);
+          if (!target) return;
+
+          const provPhotos = allCatalogPhotos.filter((p) => p.province_id === target.province_id && p.status === 'approved');
+          const currIdx = provPhotos.findIndex((p) => p.id === pId);
+          if (currIdx !== -1 && currIdx < provPhotos.length - 1) {
+            // Échanger avec la suivante
+            const temp = provPhotos[currIdx];
+            provPhotos[currIdx] = provPhotos[currIdx + 1];
+            provPhotos[currIdx + 1] = temp;
+            await photoStore.reorderCatalogPhotos(target.province_id, provPhotos.map((p) => p.id));
+            await reloadAllData();
+          }
+        });
+      });
+
+      // 4. Éditer
+      catalogGrid.querySelectorAll('[data-edit-id]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-edit-id');
+          if (pId) {
+            const photo = allCatalogPhotos.find((p) => p.id === pId);
+            if (photo) openEditModal(photo);
+          }
+        });
+      });
+
+      // 5. Archiver
+      catalogGrid.querySelectorAll('[data-archive-id]').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-archive-id');
+          if (pId) {
+            await photoStore.archiveCatalogPhoto(pId);
+            await reloadAllData();
+          }
+        });
+      });
+
+      // 6. Restaurer
+      catalogGrid.querySelectorAll('[data-restore-id]').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-restore-id');
+          if (pId) {
+            await photoStore.restoreCatalogPhoto(pId);
+            await reloadAllData();
+          }
+        });
+      });
+
+      // 7. Supprimer (ouvre le dialogue)
+      catalogGrid.querySelectorAll('[data-delete-id]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-delete-id');
+          if (pId) {
+            const photo = allCatalogPhotos.find((p) => p.id === pId);
+            if (photo) openDeleteModal(photo);
+          }
+        });
+      });
+    }
+
+    // Filtres du Catalogue
+    chipCatalogActive?.addEventListener('click', () => {
+      chipCatalogActive.classList.add('active');
+      chipCatalogArchived?.classList.remove('active');
+      currentCatalogStatus = 'active';
+      renderCatalogView();
+    });
+
+    chipCatalogArchived?.addEventListener('click', () => {
+      chipCatalogArchived.classList.add('active');
+      chipCatalogActive?.classList.remove('active');
+      currentCatalogStatus = 'archived';
+      renderCatalogView();
+    });
+
+    catalogProvinceFilter?.addEventListener('change', () => {
+      currentCatalogProvince = catalogProvinceFilter.value;
+      renderCatalogView();
+    });
+
+
+    // ==========================================
+    // RENDU DE LA MODÉRATION CITOYENNE
+    // ==========================================
+    function renderModerationView() {
+      if (!submissionsGrid || !moderationEmptyState) return;
+
+      let filtered = allModerationPhotos;
+      if (currentModStatus !== 'all') {
+        filtered = filtered.filter((p) => p.status === currentModStatus);
+      }
+      if (currentModProvince !== 'all') {
+        filtered = filtered.filter((p) => p.province_id === currentModProvince);
+      }
+
+      if (filtered.length === 0) {
+        submissionsGrid.innerHTML = '';
+        moderationEmptyState.style.display = 'flex';
+        return;
+      }
+
+      moderationEmptyState.style.display = 'none';
+
+      submissionsGrid.innerHTML = filtered.map((photo) => {
         const prov = provinces.find((p) => p.id === photo.province_id);
         const provName = prov ? `${prov.code} · ${prov.name}` : photo.province_id;
         const dateStr = new Date(photo.created_at).toLocaleDateString('fr-FR', {
@@ -385,13 +1154,12 @@ import { provinces } from '../data/provinces';
           month: 'short',
           year: 'numeric',
         });
-
         const isApproved = photo.status === 'approved';
         const isPending = photo.status === 'pending';
 
         return `
           <article class="submission-card ${photo.status}" data-photo-id="${photo.id}">
-            <div class="card-thumb" data-preview-id="${photo.id}" title="Cliquer pour prévisualiser (Laptop & Mobile)">
+            <div class="card-thumb" data-preview-id="${photo.id}" title="Cliquer pour prévisualiser">
               <img src="${photo.image_url}" alt="${photo.title}" loading="lazy" class="thumb-img" />
               <div class="card-status-badge ${photo.status}">
                 ${isApproved ? '✓ Approuvée' : isPending ? '⏳ En Attente' : '✕ Rejetée'}
@@ -408,7 +1176,7 @@ import { provinces } from '../data/provinces';
                 <p class="card-location">${photo.location}</p>
               </div>
 
-              ${photo.caption ? `<p class="card-caption">« ${photo.caption} »</p>` : '<p class="card-caption empty">Aucune légende fournie</p>'}
+              ${photo.caption ? `<p class="card-caption">« ${photo.caption} »</p>` : '<p class="card-caption empty">Aucune légende</p>'}
 
               <div class="card-contributor">
                 ${photo.user_avatar ? `<img src="${photo.user_avatar}" class="contributor-avatar" alt="" />` : `<span class="contributor-initial">${photo.user_name.charAt(0)}</span>`}
@@ -418,7 +1186,6 @@ import { provinces } from '../data/provinces';
                 </div>
               </div>
 
-              <!-- Bouton Prévisualisation Multi-Écrans -->
               <button type="button" class="btn-card-preview" data-preview-id="${photo.id}">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -447,20 +1214,19 @@ import { provinces } from '../data/provinces';
         `;
       }).join('');
 
-      // Attacher les clics d'ouverture du Studio de Prévisualisation
-      grid.querySelectorAll('[data-preview-id]').forEach((el) => {
+      // Actions de modération
+      submissionsGrid.querySelectorAll('[data-preview-id]').forEach((el) => {
         el.addEventListener('click', (e) => {
           e.stopPropagation();
           const pId = (el as HTMLElement).getAttribute('data-preview-id');
           if (pId) {
-            const photo = allPhotos.find((p) => p.id === pId);
+            const photo = allModerationPhotos.find((p) => p.id === pId);
             if (photo) openPreviewModal(photo);
           }
         });
       });
 
-      // Attacher les clics d'approbation et de rejet directs
-      grid.querySelectorAll('.btn-action-approve').forEach((btn) => {
+      submissionsGrid.querySelectorAll('.btn-action-approve').forEach((btn) => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const pId = (btn as HTMLElement).getAttribute('data-approve-id');
@@ -468,27 +1234,346 @@ import { provinces } from '../data/provinces';
             btn.textContent = 'Approbation...';
             (btn as HTMLButtonElement).disabled = true;
             await photoStore.approvePhoto(pId);
-            await loadPhotos();
+            await reloadAllData();
           }
         });
       });
 
-      grid.querySelectorAll('.btn-action-reject').forEach((btn) => {
+      submissionsGrid.querySelectorAll('.btn-action-reject').forEach((btn) => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const pId = (btn as HTMLElement).getAttribute('data-reject-id');
-          if (pId && confirm('Voulez-vous rejeter cette photographie ?')) {
+          if (pId && confirm('Voulez-vous rejeter cette photographie citoyenne ?')) {
             await photoStore.rejectPhoto(pId);
-            await loadPhotos();
+            await reloadAllData();
           }
         });
       });
     }
 
-    // ========================================================
-    // STUDIO DE PRÉVISUALISATION MULTI-ÉCRANS
-    // ========================================================
+    statusTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        statusTabs.forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentModStatus = (tab.getAttribute('data-mod-status') || 'pending') as any;
+        renderModerationView();
+      });
+    });
 
+    moderationProvinceFilter?.addEventListener('change', () => {
+      currentModProvince = moderationProvinceFilter.value;
+      renderModerationView();
+    });
+
+
+    // ==========================================
+    // MODALE D'AJOUT D'UNE PHOTO
+    // ==========================================
+    function openAddModal() {
+      if (!addModalBackdrop) return;
+      if (adminAddForm) adminAddForm.reset();
+      addCompressedFile = null;
+      setAddImageSource('url');
+      if (addImagePreviewBox) addImagePreviewBox.style.display = 'none';
+      if (addCompressionStatus) addCompressionStatus.style.display = 'none';
+
+      // Couleur par défaut
+      const defColor = DEFAULT_BG_COLORS[0];
+      if (addColorNativePicker) addColorNativePicker.value = defColor;
+      if (addColorHexInput) addColorHexInput.value = defColor;
+      if (addPreviewFrame) addPreviewFrame.style.backgroundColor = defColor;
+
+      addModalBackdrop.classList.add('open');
+      addModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeAddModal() {
+      if (!addModalBackdrop) return;
+      addModalBackdrop.classList.remove('open');
+      addModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    function setAddImageSource(mode: 'url' | 'file') {
+      addImageMode = mode;
+      if (mode === 'url') {
+        btnSourceUrl?.classList.add('active');
+        btnSourceFile?.classList.remove('active');
+        if (panelSourceUrl) panelSourceUrl.style.display = 'block';
+        if (panelSourceFile) panelSourceFile.style.display = 'none';
+      } else {
+        btnSourceFile?.classList.add('active');
+        btnSourceUrl?.classList.remove('active');
+        if (panelSourceFile) panelSourceFile.style.display = 'block';
+        if (panelSourceUrl) panelSourceUrl.style.display = 'none';
+      }
+    }
+
+    btnSourceUrl?.addEventListener('click', () => setAddImageSource('url'));
+    btnSourceFile?.addEventListener('click', () => setAddImageSource('file'));
+    btnOpenAddModal?.addEventListener('click', openAddModal);
+    btnEmptyAddPhoto?.addEventListener('click', openAddModal);
+    btnCloseAddModal?.addEventListener('click', closeAddModal);
+    btnCancelAddModal?.addEventListener('click', closeAddModal);
+
+    // Prévisualisation en direct pour l'URL
+    addUrlInput?.addEventListener('input', () => {
+      const url = addUrlInput.value.trim();
+      if (url && addLiveImg && addImagePreviewBox) {
+        addLiveImg.src = url;
+        addImagePreviewBox.style.display = 'block';
+      }
+    });
+
+    // Gestion du fichier avec compression WebP
+    addFileInput?.addEventListener('change', async () => {
+      const file = addFileInput.files?.[0];
+      if (!file) return;
+
+      if (addCompressionStatus && addCompressionText) {
+        addCompressionStatus.style.display = 'flex';
+        addCompressionText.textContent = 'Optimisation WebP haute fidélité...';
+      }
+
+      try {
+        const result = await compressImage(file);
+        addCompressedFile = result.file;
+        if (addLiveImg && addImagePreviewBox) {
+          addLiveImg.src = result.previewUrl;
+          addImagePreviewBox.style.display = 'block';
+        }
+        if (addCompressionText) {
+          addCompressionText.textContent = `Optimisé : ${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)} (-${result.ratioPercent}%)`;
+        }
+      } catch (err) {
+        console.error('Erreur compression', err);
+        addCompressedFile = file;
+      }
+    });
+
+    adminAddForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!addProvinceSelect || !addTitleInput || !addLocationInput) return;
+
+      const provinceId = addProvinceSelect.value;
+      const title = addTitleInput.value.trim();
+      const location = addLocationInput.value.trim();
+      const caption = addCaptionInput?.value.trim() || '';
+      const bgColor = addColorHexInput?.value.trim() || DEFAULT_BG_COLORS[0];
+      const imageUrl = addUrlInput?.value.trim();
+
+      if (addImageMode === 'url' && !imageUrl) {
+        alert('Veuillez entrer une adresse URL valide pour l’image.');
+        return;
+      }
+      if (addImageMode === 'file' && !addCompressedFile) {
+        alert('Veuillez sélectionner un fichier image.');
+        return;
+      }
+
+      if (btnSubmitAdd) {
+        btnSubmitAdd.disabled = true;
+        btnSubmitAdd.textContent = 'Publication en cours...';
+      }
+
+      try {
+        const res = await photoStore.createCatalogPhoto({
+          provinceId,
+          title,
+          location,
+          caption,
+          backgroundColor: bgColor,
+          imageUrl: addImageMode === 'url' ? imageUrl : undefined,
+          file: addImageMode === 'file' && addCompressedFile ? addCompressedFile : undefined,
+        });
+
+        if (res.error) {
+          alert(`Erreur : ${res.error}`);
+        } else {
+          closeAddModal();
+          await reloadAllData();
+        }
+      } catch (err: unknown) {
+        alert(`Erreur lors de l'ajout : ${err}`);
+      } finally {
+        if (btnSubmitAdd) {
+          btnSubmitAdd.disabled = false;
+          btnSubmitAdd.textContent = '✓ Publier immédiatement dans le Diaporama 3D';
+        }
+      }
+    });
+
+
+    // ==========================================
+    // MODALE D'ÉDITION D'UNE PHOTO
+    // ==========================================
+    function openEditModal(photo: CommunityPhoto) {
+      if (!editModalBackdrop) return;
+      if (adminEditForm) adminEditForm.reset();
+      editCompressedFile = null;
+      if (replaceImageDrawer) replaceImageDrawer.style.display = 'none';
+      if (editCompressionStatus) editCompressionStatus.style.display = 'none';
+
+      if (editPhotoId) editPhotoId.value = photo.id;
+      if (editProvinceSelect) editProvinceSelect.value = photo.province_id;
+      if (editTitleInput) editTitleInput.value = photo.title;
+      if (editLocationInput) editLocationInput.value = photo.location;
+      if (editCaptionInput) editCaptionInput.value = photo.caption || '';
+      if (editColorNativePicker) editColorNativePicker.value = photo.background_color;
+      if (editColorHexInput) editColorHexInput.value = photo.background_color;
+      if (editCurrentImgThumb) editCurrentImgThumb.src = photo.image_url;
+
+      renderSwatches(editColorPresets, editColorNativePicker, editColorHexInput);
+
+      editModalBackdrop.classList.add('open');
+      editModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeEditModal() {
+      if (!editModalBackdrop) return;
+      editModalBackdrop.classList.remove('open');
+      editModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    btnToggleReplaceImg?.addEventListener('click', () => {
+      if (!replaceImageDrawer) return;
+      const isOpen = replaceImageDrawer.style.display !== 'none';
+      replaceImageDrawer.style.display = isOpen ? 'none' : 'block';
+    });
+
+    function setEditImageSource(mode: 'url' | 'file') {
+      editImageMode = mode;
+      if (mode === 'url') {
+        btnEditSourceUrl?.classList.add('active');
+        btnEditSourceFile?.classList.remove('active');
+        if (panelEditSourceUrl) panelEditSourceUrl.style.display = 'block';
+        if (panelEditSourceFile) panelEditSourceFile.style.display = 'none';
+      } else {
+        btnEditSourceFile?.classList.add('active');
+        btnEditSourceUrl?.classList.remove('active');
+        if (panelEditSourceFile) panelEditSourceFile.style.display = 'block';
+        if (panelEditSourceUrl) panelEditSourceUrl.style.display = 'none';
+      }
+    }
+
+    btnEditSourceUrl?.addEventListener('click', () => setEditImageSource('url'));
+    btnEditSourceFile?.addEventListener('click', () => setEditImageSource('file'));
+    btnCloseEditModal?.addEventListener('click', closeEditModal);
+    btnCancelEditModal?.addEventListener('click', closeEditModal);
+
+    editFileInput?.addEventListener('change', async () => {
+      const file = editFileInput.files?.[0];
+      if (!file) return;
+
+      if (editCompressionStatus && editCompressionText) {
+        editCompressionStatus.style.display = 'flex';
+        editCompressionText.textContent = 'Optimisation...';
+      }
+
+      try {
+        const result = await compressImage(file);
+        editCompressedFile = result.file;
+        if (editCurrentImgThumb) editCurrentImgThumb.src = result.previewUrl;
+        if (editCompressionText) {
+          editCompressionText.textContent = `Optimisé : ${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)} (-${result.ratioPercent}%)`;
+        }
+      } catch (err) {
+        editCompressedFile = file;
+      }
+    });
+
+    adminEditForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pId = editPhotoId?.value;
+      if (!pId) return;
+
+      const title = editTitleInput?.value.trim();
+      const location = editLocationInput?.value.trim();
+      const caption = editCaptionInput?.value.trim();
+      const provinceId = editProvinceSelect?.value;
+      const backgroundColor = editColorHexInput?.value.trim();
+
+      const isReplacing = replaceImageDrawer && replaceImageDrawer.style.display !== 'none';
+      const newUrl = isReplacing && editImageMode === 'url' ? editUrlInput?.value.trim() : undefined;
+      const newFile = isReplacing && editImageMode === 'file' && editCompressedFile ? editCompressedFile : undefined;
+
+      if (btnSubmitEdit) {
+        btnSubmitEdit.disabled = true;
+        btnSubmitEdit.textContent = 'Enregistrement...';
+      }
+
+      try {
+        const res = await photoStore.updateCatalogPhoto(pId, {
+          title,
+          location,
+          caption,
+          provinceId,
+          backgroundColor,
+          imageUrl: newUrl,
+          file: newFile,
+        });
+
+        if (res.error) {
+          alert(`Erreur : ${res.error}`);
+        } else {
+          closeEditModal();
+          await reloadAllData();
+        }
+      } catch (err: unknown) {
+        alert(`Erreur lors de la mise à jour : ${err}`);
+      } finally {
+        if (btnSubmitEdit) {
+          btnSubmitEdit.disabled = false;
+          btnSubmitEdit.textContent = '💾 Enregistrer les Modifications';
+        }
+      }
+    });
+
+
+    // ==========================================
+    // MODALE DE SUPPRESSION / ARCHIVAGE
+    // ==========================================
+    function openDeleteModal(photo: CommunityPhoto) {
+      if (!deleteModalBackdrop) return;
+      pendingDeletePhoto = photo;
+
+      if (deleteModalThumb) deleteModalThumb.src = photo.image_url;
+      if (deleteModalTitleText) deleteModalTitleText.textContent = photo.title;
+      if (deleteModalLocText) deleteModalLocText.textContent = photo.location;
+
+      deleteModalBackdrop.classList.add('open');
+      deleteModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDeleteModal() {
+      if (!deleteModalBackdrop) return;
+      deleteModalBackdrop.classList.remove('open');
+      deleteModalBackdrop.setAttribute('aria-hidden', 'true');
+      pendingDeletePhoto = null;
+    }
+
+    btnCloseDeleteModal?.addEventListener('click', closeDeleteModal);
+    btnCancelDeleteModal?.addEventListener('click', closeDeleteModal);
+
+    btnChoiceArchive?.addEventListener('click', async () => {
+      if (!pendingDeletePhoto) return;
+      await photoStore.archiveCatalogPhoto(pendingDeletePhoto.id);
+      closeDeleteModal();
+      await reloadAllData();
+    });
+
+    btnChoicePermanent?.addEventListener('click', async () => {
+      if (!pendingDeletePhoto) return;
+      if (confirm(`Êtes-vous absolument sûr de vouloir supprimer définitivement "${pendingDeletePhoto.title}" ? Cette action est irréversible.`)) {
+        await photoStore.deletePhoto(pendingDeletePhoto.id, true);
+        closeDeleteModal();
+        await reloadAllData();
+      }
+    });
+
+
+    // ==========================================
+    // STUDIO DE PRÉVISUALISATION (MULTI-ÉCRANS)
+    // ==========================================
     function openPreviewModal(photo: CommunityPhoto) {
       if (!previewBackdrop) return;
       currentPreviewPhoto = photo;
@@ -498,34 +1583,62 @@ import { provinces } from '../data/provinces';
 
       if (previewModalProvince) previewModalProvince.textContent = provName;
       if (previewModalTitle) previewModalTitle.textContent = photo.title;
-      if (previewModalLocation) previewModalLocation.textContent = `${photo.location} — par ${photo.user_name}`;
+      if (previewModalLocation) previewModalLocation.textContent = `${photo.location} — ${photo.is_official !== false ? 'Patrimoine MVETT' : 'par ' + photo.user_name}`;
       
       if (previewModalStatus) {
-        previewModalStatus.textContent = photo.status === 'approved' ? '✓ Diffusée en 3D' : '⏳ En attente';
+        previewModalStatus.textContent = photo.status === 'approved' ? '✓ Diffusée en 3D' : photo.status === 'archived' ? '📦 Archivée' : '⏳ En attente';
         previewModalStatus.className = `preview-badge-status ${photo.status}`;
       }
 
-      // Configuration Laptop Mock
       if (laptopMainImg) laptopMainImg.src = photo.image_url;
       if (laptopBgBlur) laptopBgBlur.style.backgroundImage = `url("${photo.image_url}")`;
       if (laptopMockCounter) laptopMockCounter.textContent = `01 / 03 · ${prov ? prov.code : 'G1'} ${(prov ? prov.name : 'GABON').toUpperCase()}`;
       if (laptopMockTitle) laptopMockTitle.textContent = photo.title;
       if (laptopMockLoc) laptopMockLoc.textContent = photo.location;
 
-      // Configuration Mobile Mock
       if (mobileMainImg) mobileMainImg.src = photo.image_url;
       if (mobileMockTitle) mobileMockTitle.textContent = photo.title;
       if (mobileMockLoc) mobileMockLoc.textContent = photo.location;
 
-      // Bouton actions modale
-      if (btnModalApprove) {
-        btnModalApprove.style.display = photo.status === 'approved' ? 'none' : 'inline-flex';
-      }
-      if (btnModalReject) {
-        btnModalReject.textContent = photo.status === 'approved' ? 'Retirer du Diaporama' : '✕ Rejeter la photo';
+      // Boutons dynamiques du studio
+      if (previewModalButtons) {
+        if (photo.is_official !== false || photo.status === 'approved') {
+          previewModalButtons.innerHTML = `
+            <button type="button" class="btn-modal-action-edit" id="btnPreviewEdit">
+              ✏️ Modifier l'œuvre
+            </button>
+            <a href="/?photo=${photo.id}" target="_blank" class="btn-modal-action-view">
+              👁 Ouvrir dans le Diaporama 3D ↗
+            </a>
+          `;
+          document.getElementById('btnPreviewEdit')?.addEventListener('click', () => {
+            closePreviewModal();
+            openEditModal(photo);
+          });
+        } else {
+          // Soumission citoyenne
+          previewModalButtons.innerHTML = `
+            <button type="button" class="btn-modal-action-reject" id="btnPreviewReject">
+              ✕ Rejeter
+            </button>
+            <button type="button" class="btn-modal-action-approve" id="btnPreviewApprove">
+              ✓ Approuver pour le Diaporama 3D
+            </button>
+          `;
+          document.getElementById('btnPreviewApprove')?.addEventListener('click', async () => {
+            await photoStore.approvePhoto(photo.id);
+            closePreviewModal();
+            await reloadAllData();
+          });
+          document.getElementById('btnPreviewReject')?.addEventListener('click', async () => {
+            await photoStore.rejectPhoto(photo.id);
+            closePreviewModal();
+            await reloadAllData();
+          });
+        }
       }
 
-      // Déterminer le format d'image (16:9 vs 9:16)
+      // Ratio d'aspect
       const img = new Image();
       img.src = photo.image_url;
       img.onload = () => {
@@ -538,13 +1651,12 @@ import { provinces } from '../data/provinces';
 
         if (previewFormatTip) {
           if (isPortrait) {
-            previewFormatTip.innerHTML = '✨ <strong>Photo Verticale (9:16)</strong> : Le shader la centre avec élégance et ajoute un <em>flou bokeh sombre</em> sur les côtés en vue Laptop.';
+            previewFormatTip.innerHTML = '✨ <strong>Photo Verticale (9:16)</strong> : Le shader la centre et ajoute un <em>flou bokeh sombre</em> cinématique en vue Laptop.';
           } else {
-            previewFormatTip.innerHTML = '✨ <strong>Photo Horizontale (16:9)</strong> : Remplissage parfait de l’écran sur Laptop, centrée sur Smartphone.';
+            previewFormatTip.innerHTML = '✨ <strong>Photo Horizontale (16:9)</strong> : Remplissage parfait de l’écran sur Laptop, cadrée au centre sur Smartphone.';
           }
         }
 
-        // Adapter le conteneur laptop : si portrait, ajouter la classe portrait pour le flou d'arrière-plan
         if (laptopImageHolder && laptopBgBlur) {
           if (isPortrait) {
             laptopImageHolder.classList.add('portrait-framed');
@@ -556,9 +1668,7 @@ import { provinces } from '../data/provinces';
         }
       };
 
-      // Mode Laptop par défaut
       setDeviceView('laptop');
-
       previewBackdrop.classList.add('open');
       previewBackdrop.setAttribute('aria-hidden', 'false');
     }
@@ -593,47 +1703,15 @@ import { provinces } from '../data/provinces';
     });
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && previewBackdrop?.classList.contains('open')) {
-        closePreviewModal();
+      if (e.key === 'Escape') {
+        if (previewBackdrop?.classList.contains('open')) closePreviewModal();
+        if (addModalBackdrop?.classList.contains('open')) closeAddModal();
+        if (editModalBackdrop?.classList.contains('open')) closeEditModal();
+        if (deleteModalBackdrop?.classList.contains('open')) closeDeleteModal();
       }
     });
 
-    // Actions depuis la modale
-    btnModalApprove?.addEventListener('click', async () => {
-      if (currentPreviewPhoto) {
-        btnModalApprove.textContent = 'Approbation...';
-        btnModalApprove.disabled = true;
-        await photoStore.approvePhoto(currentPreviewPhoto.id);
-        closePreviewModal();
-        await loadPhotos();
-      }
-    });
-
-    btnModalReject?.addEventListener('click', async () => {
-      if (currentPreviewPhoto && confirm('Voulez-vous retirer cette photographie ?')) {
-        await photoStore.rejectPhoto(currentPreviewPhoto.id);
-        closePreviewModal();
-        await loadPhotos();
-      }
-    });
-
-    // Gestion des onglets de statut
-    statusTabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        statusTabs.forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        currentStatusFilter = (tab.getAttribute('data-status') || 'pending') as any;
-        renderCards();
-      });
-    });
-
-    // Gestion du filtre par province
-    provinceFilter?.addEventListener('change', () => {
-      currentProvinceFilter = provinceFilter.value;
-      renderCards();
-    });
-
-    // Authentification
+    // Authentification boutons
     btnGoogle?.addEventListener('click', async () => {
       await photoStore.loginWithGoogle();
     });
@@ -652,10 +1730,15 @@ import { provinces } from '../data/provinces';
       checkAuth();
     });
 
-    window.addEventListener('mvett:photos-updated', () => {
-      loadPhotos();
+    window.addEventListener('mvett:catalog-updated', () => {
+      reloadAllData();
     });
 
+    window.addEventListener('mvett:photos-updated', () => {
+      reloadAllData();
+    });
+
+    initColorPickers();
     checkAuth();
   });
 </script>
@@ -677,7 +1760,7 @@ import { provinces } from '../data/provinces';
     align-items: center;
     padding: 1.2rem 3rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(16, 20, 19, 0.85);
+    background: rgba(16, 20, 19, 0.9);
     backdrop-filter: blur(20px);
     position: sticky;
     top: 0;
@@ -779,7 +1862,7 @@ import { provinces } from '../data/provinces';
   .gate-card {
     max-width: 500px;
     text-align: center;
-    background: rgba(22, 28, 26, 0.75);
+    background: rgba(22, 28, 26, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 20px;
     padding: 3rem 2.4rem;
@@ -861,13 +1944,527 @@ import { provinces } from '../data/provinces';
 
   /* Dashboard */
   .admin-dashboard {
-    max-width: 1400px;
+    max-width: 1440px;
     width: 100%;
     margin: 0 auto;
-    padding: 2.2rem 3rem 5rem 3rem;
+    padding: 2rem 3rem 6rem 3rem;
   }
 
-  /* KPI Cards */
+  /* Navigation Dual-Tab (Catalogue vs Modération) */
+  .admin-view-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+  }
+
+  .view-nav-tab {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0.85rem 1.6rem;
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .view-nav-tab:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  .view-nav-tab.active {
+    background: #ffffff;
+    color: #0b0f0e;
+    border-color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+  }
+
+  .tab-nav-badge {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+  }
+
+  .view-nav-tab.active .tab-nav-badge {
+    background: #0b0f0e;
+    color: #ffffff;
+  }
+
+  .tab-nav-badge.pending {
+    background: #eab308;
+    color: #000000;
+  }
+
+  /* Catalog Section Header */
+  .catalog-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    margin-bottom: 1.8rem;
+    flex-wrap: wrap;
+  }
+
+  .section-heading {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .section-subheading {
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.65);
+    max-width: 650px;
+    line-height: 1.5;
+  }
+
+  .btn-add-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #22c55e;
+    color: #05260f;
+    border: none;
+    padding: 0.8rem 1.4rem;
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .btn-add-primary:hover {
+    background: #16a34a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(34, 197, 94, 0.45);
+  }
+
+  /* Catalog Toolbar */
+  .catalog-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.8rem 1.2rem;
+    border-radius: 14px;
+  }
+
+  .segmented-chips {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .chip-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.7);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .chip-btn.active {
+    background: #ffffff;
+    color: #0d1110;
+    border-color: #ffffff;
+    font-weight: 600;
+  }
+
+  .chip-count {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+  }
+
+  .chip-btn.active .chip-count {
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .filter-label {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+  }
+
+  .admin-select {
+    padding: 0.55rem 1rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .admin-select option {
+    background: #141917;
+    color: #ffffff;
+  }
+
+  /* Catalog Grid */
+  .catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 360px));
+    justify-content: start;
+    gap: 1.8rem;
+  }
+
+  .catalog-card {
+    max-width: 360px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .catalog-card:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+  }
+
+  .catalog-card.archived {
+    opacity: 0.65;
+    filter: grayscale(0.2);
+    border-left: 3px solid #64748b;
+  }
+
+  .catalog-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #000000;
+    cursor: pointer;
+  }
+
+  .catalog-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+  }
+
+  .catalog-thumb:hover img {
+    transform: scale(1.05);
+  }
+
+  .thumb-badges-top {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2;
+  }
+
+  .badge-prov {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+  }
+
+  .badge-order {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+  }
+
+  .thumb-badges-bottom {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    display: flex;
+    gap: 0.4rem;
+    z-index: 2;
+  }
+
+  .badge-origin {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+  }
+
+  .badge-origin.official {
+    background: rgba(234, 179, 8, 0.85);
+    color: #000000;
+  }
+
+  .badge-origin.community {
+    background: rgba(59, 130, 246, 0.85);
+    color: #ffffff;
+  }
+
+  .badge-archived {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.85);
+    color: #ffffff;
+  }
+
+  .thumb-overlay-hint {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .thumb-overlay-hint span {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #ffffff;
+    color: #121615;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+  }
+
+  .catalog-thumb:hover .thumb-overlay-hint {
+    opacity: 1;
+  }
+
+  .catalog-card-body {
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .catalog-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .catalog-title {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .color-swatch-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  }
+
+  .catalog-location {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.7rem;
+  }
+
+  .catalog-caption {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.4;
+    margin-bottom: 0.9rem;
+  }
+
+  /* Contrôles d'ordre */
+  .order-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.65rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    margin-top: auto;
+    margin-bottom: 0.8rem;
+  }
+
+  .order-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+  }
+
+  .order-btns {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .btn-order-move {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-order-move:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  /* Barre d'actions */
+  .catalog-actions-row {
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+  }
+
+  .btn-card-edit {
+    flex: 1.2;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .btn-card-edit:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .btn-card-test {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-card-test:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+  }
+
+  .btn-card-archive {
+    background: rgba(100, 116, 139, 0.2);
+    color: #cbd5e1;
+    border: 1px solid rgba(100, 116, 139, 0.4);
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-card-archive:hover {
+    background: rgba(100, 116, 139, 0.35);
+    color: #ffffff;
+  }
+
+  .btn-card-restore {
+    background: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-card-restore:hover {
+    background: rgba(34, 197, 94, 0.35);
+    color: #ffffff;
+  }
+
+  .btn-card-delete {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 0.5rem 0.65rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.76rem;
+    transition: all 0.15s ease;
+  }
+
+  .btn-card-delete:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #ffffff;
+  }
+
+  /* Modération CSS */
   .kpi-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -920,7 +2517,6 @@ import { provinces } from '../data/provinces';
     margin-top: 0.2rem;
   }
 
-  /* Controls */
   .admin-controls {
     display: flex;
     justify-content: space-between;
@@ -969,28 +2565,6 @@ import { provinces } from '../data/provinces';
     font-size: 0.72rem;
   }
 
-  .tab-btn.active .tab-counter {
-    background: rgba(0, 0, 0, 0.15);
-  }
-
-  .admin-select {
-    padding: 0.6rem 1rem;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 999px;
-    color: #ffffff;
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    outline: none;
-    cursor: pointer;
-  }
-
-  .admin-select option {
-    background: #141917;
-    color: #ffffff;
-  }
-
-  /* Submissions Grid — Compacte, max 360px par carte */
   .submissions-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 360px));
@@ -1007,13 +2581,7 @@ import { provinces } from '../data/provinces';
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .submission-card:hover {
-    border-color: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease;
   }
 
   .submission-card.pending {
@@ -1037,36 +2605,6 @@ import { provinces } from '../data/provinces';
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-
-  .card-thumb:hover img {
-    transform: scale(1.04);
-  }
-
-  .thumb-overlay-hint {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-
-  .thumb-overlay-hint span {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    font-weight: 600;
-    background: #ffffff;
-    color: #121615;
-    padding: 0.4rem 0.85rem;
-    border-radius: 999px;
-  }
-
-  .card-thumb:hover .thumb-overlay-hint {
-    opacity: 1;
   }
 
   .card-status-badge {
@@ -1210,7 +2748,6 @@ import { provinces } from '../data/provinces';
 
   .btn-card-preview:hover {
     background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.4);
   }
 
   .card-actions {
@@ -1229,12 +2766,11 @@ import { provinces } from '../data/provinces';
     font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.1s ease;
+    transition: background 0.15s ease;
   }
 
   .btn-action-approve:hover:not(:disabled) {
     background: #16a34a;
-    transform: translateY(-1px);
   }
 
   .btn-action-view {
@@ -1251,11 +2787,6 @@ import { provinces } from '../data/provinces';
     font-size: 0.75rem;
     font-weight: 600;
     text-decoration: none;
-    transition: background 0.15s ease;
-  }
-
-  .btn-action-view:hover {
-    background: rgba(255, 255, 255, 0.2);
   }
 
   .btn-action-reject {
@@ -1267,12 +2798,6 @@ import { provinces } from '../data/provinces';
     font-family: var(--font-mono);
     font-size: 0.75rem;
     cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .btn-action-reject:hover {
-    background: rgba(239, 68, 68, 0.3);
-    color: #ffffff;
   }
 
   /* Empty State */
@@ -1303,19 +2828,553 @@ import { provinces } from '../data/provinces';
     font-size: 0.82rem;
     color: rgba(255, 255, 255, 0.55);
     max-width: 400px;
+    margin-bottom: 1.2rem;
+  }
+
+  .btn-empty-action {
+    background: #22c55e;
+    color: #062e14;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.65rem 1.2rem;
+    border-radius: 10px;
+    cursor: pointer;
   }
 
   /* ========================================================
-     MODALE DU STUDIO DE PRÉVISUALISATION (MULTI-ÉCRANS)
+     MODALES D'AJOUT, D'ÉDITION ET DE SUPPRESSION
      ======================================================== */
+  .admin-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 8, 7, 0.85);
+    backdrop-filter: blur(25px);
+    z-index: 180;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+
+  .admin-modal-backdrop.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .admin-modal-box {
+    width: 100%;
+    max-width: 680px;
+    max-height: 92vh;
+    background: rgba(18, 22, 21, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.96);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .admin-modal-box.compact {
+    max-width: 520px;
+  }
+
+  .admin-modal-backdrop.open .admin-modal-box {
+    transform: scale(1);
+  }
+
+  .admin-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.4rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(13, 17, 16, 0.7);
+  }
+
+  .modal-badge-pill {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.18);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    color: #86efac;
+    margin-bottom: 0.25rem;
+  }
+
+  .modal-badge-pill.edit {
+    background: rgba(59, 130, 246, 0.18);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #93c5fd;
+  }
+
+  .modal-main-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.65rem;
+    font-weight: 600;
+  }
+
+  .modal-main-title.danger {
+    color: #f87171;
+  }
+
+  .btn-close-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+  }
+
+  .btn-close-box:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .modal-form {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .modal-form-body {
+    padding: 1.8rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    overflow-y: auto;
+  }
+
+  .form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .field-label {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.88);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .field-hint {
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.4;
+  }
+
+  .field-input, .field-textarea {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.86rem;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .field-input:focus, .field-textarea:focus {
+    border-color: #22c55e;
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  /* Color picker row */
+  .color-picker-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+
+  .color-presets {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .swatch-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  .swatch-btn:hover {
+    transform: scale(1.15);
+  }
+
+  .swatch-btn.selected {
+    border-color: #ffffff;
+    transform: scale(1.15);
+  }
+
+  .custom-color-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .native-color-picker {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: none;
+  }
+
+  .hex-text-input {
+    width: 80px;
+    padding: 0.35rem 0.5rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+  }
+
+  /* Image source switcher */
+  .source-tab-switcher {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 0.25rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 0.5rem;
+  }
+
+  .source-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.65);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    padding: 0.55rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .source-tab.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .dropzone {
+    position: relative;
+    border: 2px dashed rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    padding: 1.6rem 1rem;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .dropzone:hover {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.04);
+  }
+
+  .file-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .dropzone-text {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    margin: 0.4rem 0 0.2rem 0;
+  }
+
+  .dropzone-text span {
+    color: #22c55e;
+    text-decoration: underline;
+  }
+
+  .dropzone-sub {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .compression-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.8rem;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: #86efac;
+    margin-top: 0.5rem;
+  }
+
+  /* Live Preview Box */
+  .image-live-preview-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .preview-box-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+  }
+
+  .preview-img-frame {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 8px;
+    background: #1b2c34;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  }
+
+  .preview-img-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+
+  /* Edit Current Image Card */
+  .edit-current-image-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+
+  .current-thumb {
+    width: 90px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+
+  .current-img-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .current-img-status {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .btn-toggle-replace-img {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .replace-image-drawer {
+    margin-top: 0.8rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+
+  /* Modal Footer */
+  .modal-form-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1.2rem 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(13, 17, 16, 0.8);
+  }
+
+  .btn-modal-cancel {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 0.65rem 1.1rem;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .btn-modal-submit {
+    background: #22c55e;
+    color: #062e14;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.7rem 1.4rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn-modal-submit:hover:not(:disabled) {
+    background: #16a34a;
+    transform: translateY(-1px);
+  }
+
+  /* Delete Modal Specifics */
+  .delete-modal-body {
+    padding: 1.8rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+
+  .delete-photo-summary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+  }
+
+  .delete-thumb {
+    width: 80px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+
+  .delete-meta {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .delete-title {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .delete-loc {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .delete-lead-text {
+    font-size: 0.86rem;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .delete-choice-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .choice-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    color: #ffffff;
+    transition: all 0.2s ease;
+  }
+
+  .choice-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .choice-card.danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+
+  .choice-icon {
+    font-size: 1.5rem;
+  }
+
+  .choice-content strong {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .choice-content p {
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.4;
+  }
+
+  /* Preview Studio Styles */
   .preview-modal-backdrop {
     position: fixed;
     inset: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(6, 8, 7, 0.85);
+    background: rgba(6, 8, 7, 0.88);
     backdrop-filter: blur(30px);
-    z-index: 150;
+    z-index: 200;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1334,19 +3393,13 @@ import { provinces } from '../data/provinces';
     width: 100%;
     max-width: 1050px;
     max-height: 94vh;
-    background: rgba(18, 22, 21, 0.94);
+    background: rgba(18, 22, 21, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 20px;
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.75);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transform: scale(0.97);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .preview-modal-backdrop.open .preview-modal-container {
-    transform: scale(1);
   }
 
   .preview-modal-header {
@@ -1393,21 +3446,25 @@ import { provinces } from '../data/provinces';
     border-radius: 999px;
   }
 
-  .preview-badge-status.pending {
-    background: rgba(234, 179, 8, 0.2);
-    color: #fde047;
-  }
-
   .preview-badge-status.approved {
     background: rgba(34, 197, 94, 0.2);
     color: #86efac;
+  }
+
+  .preview-badge-status.archived {
+    background: rgba(100, 116, 139, 0.2);
+    color: #cbd5e1;
+  }
+
+  .preview-badge-status.pending {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fde047;
   }
 
   .preview-modal-title {
     font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: 1.5rem;
     font-weight: 600;
-    line-height: 1.2;
     margin-bottom: 0.15rem;
   }
 
@@ -1416,7 +3473,6 @@ import { provinces } from '../data/provinces';
     font-size: 0.74rem;
     color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
 
   .device-switcher {
@@ -1457,22 +3513,15 @@ import { provinces } from '../data/provinces';
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #ffffff;
     cursor: pointer;
-    font-size: 0.9rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s ease;
   }
 
-  .btn-close-modal:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  /* Stage Viewport */
   .preview-stage-viewport {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem 2rem;
+    padding: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1480,7 +3529,6 @@ import { provinces } from '../data/provinces';
     background: #080a09;
   }
 
-  /* --- Laptop Simulation Frame (16:9) --- */
   .screen-frame-laptop {
     display: flex;
     flex-direction: column;
@@ -1534,12 +3582,10 @@ import { provinces } from '../data/provinces';
     object-fit: cover;
   }
 
-  /* Si portrait, l'image reste centrée avec son cadre élégant */
   .laptop-image-holder.portrait-framed img {
     width: auto;
     height: 90%;
     aspect-ratio: 9 / 16;
-    object-fit: cover;
     border-radius: 4px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1554,7 +3600,6 @@ import { provinces } from '../data/provinces';
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
   }
 
-  /* --- Smartphone Simulation Frame (9:16) --- */
   .screen-frame-mobile {
     display: flex;
     justify-content: center;
@@ -1614,7 +3659,6 @@ import { provinces } from '../data/provinces';
     z-index: 10;
   }
 
-  /* Mockup HUD Overlay */
   .hud-mock-overlay {
     position: absolute;
     inset: 0;
@@ -1669,7 +3713,6 @@ import { provinces } from '../data/provinces';
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
   }
 
-  /* Modal Footer */
   .preview-modal-footer {
     display: flex;
     justify-content: space-between;
@@ -1695,6 +3738,32 @@ import { provinces } from '../data/provinces';
     gap: 0.8rem;
   }
 
+  .btn-modal-action-edit, .btn-modal-action-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+
+  .btn-modal-action-edit {
+    background: #ffffff;
+    color: #0d1110;
+    border: none;
+  }
+
+  .btn-modal-action-view {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
   .btn-modal-action-approve {
     background: #22c55e;
     color: #062e14;
@@ -1705,11 +3774,6 @@ import { provinces } from '../data/provinces';
     padding: 0.65rem 1.3rem;
     border-radius: 8px;
     cursor: pointer;
-    transition: background 0.15s ease;
-  }
-
-  .btn-modal-action-approve:hover {
-    background: #16a34a;
   }
 
   .btn-modal-action-reject {
@@ -1721,46 +3785,32 @@ import { provinces } from '../data/provinces';
     padding: 0.65rem 1.1rem;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.15s ease;
   }
 
-  .btn-modal-action-reject:hover {
-    background: rgba(239, 68, 68, 0.3);
-    color: #ffffff;
-  }
-
-  @media (max-width: 768px) {
+  @media (max-width: 850px) {
     .admin-header {
       padding: 1rem 1.2rem;
     }
     .admin-dashboard {
       padding: 1.5rem 1.2rem;
     }
-    .admin-controls {
+    .catalog-section-header {
       flex-direction: column;
       align-items: stretch;
     }
-    .status-tabs {
-      overflow-x: auto;
-    }
-    .submissions-grid {
+    .form-row-2 {
       grid-template-columns: 1fr;
     }
-    .submission-card {
+    .catalog-grid, .submissions-grid {
+      grid-template-columns: 1fr;
+    }
+    .catalog-card, .submission-card {
       max-width: 100%;
     }
-    .preview-modal-header {
+    .preview-modal-header, .preview-modal-footer {
       flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-    .preview-modal-footer {
-      flex-direction: column;
-      gap: 1rem;
       align-items: stretch;
-    }
-    .footer-buttons {
-      flex-direction: column-reverse;
+      gap: 1rem;
     }
   }
 </style>
