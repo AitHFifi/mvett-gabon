@@ -37,27 +37,26 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
     let currentSlides: FlatSlide[] = getFlattenedSlides();
 
     async function buildCombinedSlides(): Promise<FlatSlide[]> {
-      const communityPhotos = await photoStore.getPhotos();
+      const catalogPhotos = await photoStore.getCatalogPhotos({ includeArchived: false });
       const combined: FlatSlide[] = [];
 
       provinces.forEach((prov, pIdx) => {
-        const provPhotos: Array<ProvincePhoto & { isCommunity?: boolean }> = [...prov.photos];
+        // Obtenir toutes les photos approuvées/officielles pour cette province
+        const provPhotos = catalogPhotos.filter((cp) => cp.province_id === prov.id);
 
-        // Ajouter les photos communautaires de cette province
-        const cPhotos = communityPhotos.filter((cp) => cp.province_id === prov.id);
-        cPhotos.forEach((cp) => {
-          provPhotos.push({
-            id: cp.id,
-            title: cp.title,
-            location: cp.location,
-            image: cp.image_url,
-            caption: cp.caption,
-            backgroundColor: cp.background_color || '#1b2c34',
-            isCommunity: true,
-          });
-        });
+        const activePhotos: Array<ProvincePhoto & { isCommunity?: boolean }> = provPhotos.length > 0
+          ? provPhotos.map((cp) => ({
+              id: cp.id,
+              title: cp.title,
+              location: cp.location,
+              image: cp.image_url,
+              caption: cp.caption,
+              backgroundColor: cp.background_color || '#1b2c34',
+              isCommunity: !cp.is_official,
+            }))
+          : prov.photos.map((p) => ({ ...p, isCommunity: false }));
 
-        provPhotos.forEach((photo, phIdx) => {
+        activePhotos.forEach((photo, phIdx) => {
           combined.push({
             ...photo,
             provinceId: prov.id,
@@ -66,7 +65,7 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
             provinceName: prov.name,
             provinceCapital: prov.capital,
             photoIndexInProvince: phIdx,
-            totalPhotosInProvince: provPhotos.length,
+            totalPhotosInProvince: activePhotos.length,
           });
         });
       });
@@ -154,26 +153,30 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
       },
     });
 
-    // Charger et injecter les photos communautaires initiales
+    // Charger et injecter les photos du catalogue initiales
     buildCombinedSlides().then((fullSlides) => {
-      if (fullSlides.length > currentSlides.length) {
+      if (fullSlides.length > 0) {
         currentSlides = fullSlides;
         slider.updateSlides(currentSlides);
       }
     });
 
-    // Écouter les mises à jour des photos (nouveau téléversement ou suppression)
-    window.addEventListener('mvett:photos-updated', (async (e: CustomEvent) => {
+    // Écouter les mises à jour des photos (nouveau téléversement, modification, suppression, réordonnancement)
+    const handleSlidesUpdate = async (e: Event) => {
+      const ce = e as CustomEvent;
       const updatedSlides = await buildCombinedSlides();
       currentSlides = updatedSlides;
-      const targetId = e.detail?.id;
+      const targetId = ce.detail?.id;
       let targetIndex: number | undefined = undefined;
       if (targetId) {
         const found = updatedSlides.findIndex((s) => s.id === targetId);
         if (found !== -1) targetIndex = found;
       }
       await slider.updateSlides(updatedSlides, targetIndex);
-    }) as EventListener);
+    };
+
+    window.addEventListener('mvett:photos-updated', handleSlidesUpdate as EventListener);
+    window.addEventListener('mvett:catalog-updated', handleSlidesUpdate as EventListener);
 
     // Écouter le saut direct vers une photo précise (depuis la galerie)
     window.addEventListener('mvett:jump-to-slide', ((e: CustomEvent) => {

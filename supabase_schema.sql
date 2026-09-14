@@ -3,7 +3,7 @@
 -- Exécutez ce script complet dans le "SQL Editor" de votre tableau de bord Supabase
 -- ==============================================================================
 
--- 1. Création de la table des photos communautaires avec statut de modération
+-- 1. Création de la table des photos avec statut de modération et catalogue
 CREATE TABLE IF NOT EXISTS public.community_photos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -15,18 +15,33 @@ CREATE TABLE IF NOT EXISTS public.community_photos (
     caption TEXT,
     image_url TEXT NOT NULL,
     background_color TEXT DEFAULT '#1b2c34',
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    is_official BOOLEAN DEFAULT false,
+    display_order INTEGER DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'archived')),
     approved_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
 -- Si la table existait déjà, ajouter les colonnes sans casser les données existantes
+ALTER TABLE public.community_photos ADD COLUMN IF NOT EXISTS is_official BOOLEAN DEFAULT false;
+ALTER TABLE public.community_photos ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
 ALTER TABLE public.community_photos ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending';
 ALTER TABLE public.community_photos ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+
+-- Mise à jour de la contrainte CHECK pour inclure 'archived'
+DO $$ 
+BEGIN
+    ALTER TABLE public.community_photos DROP CONSTRAINT IF EXISTS community_photos_status_check;
+    ALTER TABLE public.community_photos ADD CONSTRAINT community_photos_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'archived'));
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
 
 -- Indexation pour des requêtes ultra rapides
 CREATE INDEX IF NOT EXISTS idx_community_photos_province ON public.community_photos (province_id);
 CREATE INDEX IF NOT EXISTS idx_community_photos_status ON public.community_photos (status);
+CREATE INDEX IF NOT EXISTS idx_community_photos_official ON public.community_photos (is_official);
+CREATE INDEX IF NOT EXISTS idx_community_photos_order ON public.community_photos (display_order ASC);
 CREATE INDEX IF NOT EXISTS idx_community_photos_created_at ON public.community_photos (created_at DESC);
 
 -- 2. Activation de la sécurité au niveau des lignes (Row Level Security - RLS)
