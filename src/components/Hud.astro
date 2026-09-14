@@ -64,11 +64,26 @@
 
     <div class="nav-hints" aria-hidden="true">
       <span class="hint-desktop">Cliquer ou Espace pour avancer</span>
+      <span class="hint-mobile">Toucher ou glisser pour naviguer</span>
       <span class="hint-keys">← / →</span>
     </div>
   </div>
 
 </aside>
+
+<!-- Contrôles tactiles discrets pour iPhone & Mobile -->
+<div class="mobile-nav-controls" aria-label="Commandes de navigation tactile">
+  <button class="nav-mobile-chevron prev" id="btnMobilePrev" type="button" aria-label="Photographie précédente" title="Précédente">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+  </button>
+  <button class="nav-mobile-chevron next" id="btnMobileNext" type="button" aria-label="Photographie suivante" title="Suivante">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </button>
+</div>
 
 <!-- Barre de progression discrète -->
 <div class="progress-bar" id="hudProgressBar" role="progressbar" aria-valuenow="11" aria-valuemin="0" aria-valuemax="100"></div>
@@ -157,6 +172,27 @@
       e.preventDefault();
       await photoStore.logout();
     });
+
+    // Commandes tactiles mobiles directes (Chevrons)
+    const btnMobilePrev = document.getElementById('btnMobilePrev');
+    const btnMobileNext = document.getElementById('btnMobileNext');
+
+    const handlePrev = (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('mvett:slide-prev'));
+    };
+
+    const handleNext = (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('mvett:slide-next'));
+    };
+
+    btnMobilePrev?.addEventListener('click', handlePrev);
+    btnMobilePrev?.addEventListener('touchend', handlePrev);
+    btnMobileNext?.addEventListener('click', handleNext);
+    btnMobileNext?.addEventListener('touchend', handleNext);
   }
 
   if (document.readyState === 'loading') {
@@ -457,6 +493,58 @@
     text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
   }
 
+  .hint-mobile {
+    display: none;
+  }
+
+  /* Contrôles tactiles latéraux pour iPhone / Mobile */
+  .mobile-nav-controls {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    justify-content: space-between;
+    padding: 0 0.8rem;
+    pointer-events: none;
+    z-index: 45;
+  }
+
+  @media (max-width: 768px), (pointer: coarse) {
+    .mobile-nav-controls {
+      display: flex;
+    }
+  }
+
+  .nav-mobile-chevron {
+    pointer-events: auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.44);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+    transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .nav-mobile-chevron:active {
+    transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.28);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
   @media (max-width: 768px), (pointer: coarse) {
     .hud-overlay {
       padding: 1rem 1rem calc(5.6rem + env(safe-area-inset-bottom, 0px)) 1rem;
@@ -546,7 +634,17 @@
       font-size: 0.7rem;
     }
     .nav-hints {
+      display: flex;
+      font-size: 0.64rem;
+      opacity: 0.75;
+      margin-top: 0.25rem;
+    }
+    .hint-desktop,
+    .hint-keys {
       display: none;
+    }
+    .hint-mobile {
+      display: inline;
     }
     .cursor-pill {
       display: none !important;

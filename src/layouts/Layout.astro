@@ -48,11 +48,14 @@ const {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
     background-color: #111413;
     color: #ffffff;
     font-family: var(--font-main);
     -webkit-font-smoothing: antialiased;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Universal custom scrollbar */
@@ -66,5 +69,18 @@ const {
   ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
+  }
+
+  /* Masquer le HUD et le Ticker quand le panneau info plein écran est ouvert pour éviter les collisions visuelles */
+  body.info-overlay-open .hud-overlay,
+  body.info-overlay-open .footer-ticker-bar,
+  body.info-overlay-open .mobile-nav-controls,
+  body:has(#infoOverlay.open) .hud-overlay,
+  body:has(#infoOverlay.open) .footer-ticker-bar,
+  body:has(#infoOverlay.open) .mobile-nav-controls {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
   }
 </style>

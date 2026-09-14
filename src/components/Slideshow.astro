@@ -5,7 +5,7 @@ const initialSlides = getFlattenedSlides();
 const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
 ---
 
-<div class="slideshow-wrapper" id="slideshowWrapper">
+<div class="slideshow-wrapper" id="slideshowWrapper" onclick="" role="region" aria-label="Diaporama des 9 Provinces">
   <!-- Three.js Canvas Container -->
   <div class="webgl-canvas-container" id="webglContainer"></div>
 
@@ -199,11 +199,18 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
       });
     }
 
-    // Viewport Click Navigation
-    window.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      // Do not advance if clicking interactive elements or modals
-      if (
+    // ========================================================
+    // Touch & Swipe Gesture Navigation (Optimisé iPhone / Safari & Mobile)
+    // ========================================================
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let isTrackingTouch = false;
+    let lastTouchActionTime = 0;
+
+    function isInteractiveTarget(target: EventTarget | null): boolean {
+      if (!target || !(target instanceof Element)) return false;
+      return !!(
         target.closest('.brand-button') ||
         target.closest('.sound-toggle') ||
         target.closest('.footer-ticker-bar') ||
@@ -212,18 +219,115 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
         target.closest('.auth-modal-backdrop') ||
         target.closest('.upload-modal-backdrop') ||
         target.closest('.gallery-drawer-backdrop') ||
+        target.closest('.preview-modal-backdrop') ||
+        target.closest('.nav-mobile-arrow') ||
+        target.closest('.nav-mobile-chevron') ||
         target.closest('button') ||
         target.closest('a') ||
         target.closest('input') ||
         target.closest('select') ||
         target.closest('textarea')
-      ) {
+      );
+    }
+
+    function isAnyModalOpen(): boolean {
+      return !!(
+        infoOverlay?.classList.contains('open') ||
+        document.querySelector('.auth-modal-backdrop.open') ||
+        document.querySelector('.upload-modal-backdrop.open') ||
+        document.querySelector('.gallery-drawer-backdrop.open') ||
+        document.querySelector('.preview-modal-backdrop.open')
+      );
+    }
+
+    // Capture du début du touché
+    window.addEventListener('touchstart', (e: TouchEvent) => {
+      if (isAnyModalOpen() || isInteractiveTarget(e.target)) {
+        isTrackingTouch = false;
         return;
       }
-      if (infoOverlay?.classList.contains('open')) return;
-      if (document.querySelector('.auth-modal-backdrop.open')) return;
-      if (document.querySelector('.upload-modal-backdrop.open')) return;
-      if (document.querySelector('.gallery-drawer-backdrop.open')) return;
+
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+        isTrackingTouch = true;
+      } else {
+        isTrackingTouch = false;
+      }
+    }, { passive: true });
+
+    // Détection du glissement en cours
+    window.addEventListener('touchmove', (e: TouchEvent) => {
+      if (!isTrackingTouch || e.touches.length !== 1) return;
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const diffX = Math.abs(currentX - touchStartX);
+      const diffY = Math.abs(currentY - touchStartY);
+
+      // Si le glissement horizontal est dominant, bloquer le scrolling parasite sur iOS
+      if (diffX > diffY && diffX > 10) {
+        if (e.cancelable) e.preventDefault();
+      }
+    }, { passive: false });
+
+    // Fin du touché : déclenchement du Swipe ou du Tap
+    window.addEventListener('touchend', (e: TouchEvent) => {
+      if (!isTrackingTouch) return;
+      isTrackingTouch = false;
+
+      if (isAnyModalOpen() || isInteractiveTarget(e.target)) return;
+
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      const elapsed = Date.now() - touchStartTime;
+      const distance = Math.hypot(deltaX, deltaY);
+
+      // 1. DÉTECTION DU GESTE SWIPE (Glissement franc vers la gauche ou vers la droite)
+      if (absX >= 35 && absX > absY * 1.05 && elapsed < 800) {
+        lastTouchActionTime = Date.now();
+        if (deltaX < 0) {
+          // Balayage vers la gauche -> Photo suivante
+          slider.next();
+        } else {
+          // Balayage vers la droite -> Photo précédente
+          slider.prev();
+        }
+        return;
+      }
+
+      // 2. DÉTECTION DU TAP TACTILE SUR IPHONE (Tap net sans glissement)
+      if (distance < 18 && elapsed < 450) {
+        lastTouchActionTime = Date.now();
+        const threshold = window.innerWidth * 0.5;
+        if (touch.clientX < threshold) {
+          slider.prev();
+        } else {
+          slider.next();
+        }
+        return;
+      }
+    }, { passive: true });
+
+    // Annulation tactile (ex: appel entrant ou geste système)
+    window.addEventListener('touchcancel', () => {
+      isTrackingTouch = false;
+    });
+
+    // Clic Bureau Standard (Ignoré si l'action vient d'être déclenchée par un touch/tap tactile sur mobile)
+    window.addEventListener('click', (e) => {
+      if (Date.now() - lastTouchActionTime < 500) {
+        return;
+      }
+
+      if (isAnyModalOpen() || isInteractiveTarget(e.target)) {
+        return;
+      }
 
       const threshold = window.innerWidth * 0.5;
       if (e.clientX < threshold) {
@@ -231,6 +335,15 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
       } else {
         slider.next();
       }
+    });
+
+    // Écouteurs pour les commandes explicites (ex: flèches chevrons mobiles)
+    window.addEventListener('mvett:slide-next', () => {
+      slider.next();
+    });
+
+    window.addEventListener('mvett:slide-prev', () => {
+      slider.prev();
     });
 
 
@@ -274,12 +387,14 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
     function openInfo() {
       infoOverlay?.classList.add('open');
       infoOverlay?.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('info-overlay-open');
       if (cursorPill) cursorPill.style.opacity = '0';
     }
 
     function closeInfo() {
       infoOverlay?.classList.remove('open');
       infoOverlay?.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('info-overlay-open');
     }
 
     toggleInfoBtn?.addEventListener('click', (e) => {
@@ -312,8 +427,13 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
     inset: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
-    cursor: crosshair;
+    cursor: pointer;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .webgl-canvas-container {
@@ -322,12 +442,18 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
     width: 100%;
     height: 100%;
     z-index: 2;
+    cursor: pointer;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .webgl-canvas-container canvas {
     display: block;
     width: 100% !important;
     height: 100% !important;
+    cursor: pointer;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .color-backdrop {
