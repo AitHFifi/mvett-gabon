@@ -184,9 +184,13 @@ export class WebGLSlider {
   private imageDimensions: THREE.Vector2[] = [];
   private animationId: number | null = null;
 
-  // Mouse tracking with smooth lerp
+  // Mouse & Touch tracking with smooth lerp
   private targetMouse: THREE.Vector2 = new THREE.Vector2(0, 0);
   private currentMouse: THREE.Vector2 = new THREE.Vector2(0, 0);
+
+  private handleResize = this.onResize.bind(this);
+  private handleMouseMove = this.onMouseMove.bind(this);
+  private handleTouchMove = this.onTouchMove.bind(this);
 
   constructor(options: WebGLSliderOptions) {
     this.container = options.container;
@@ -237,13 +241,22 @@ export class WebGLSlider {
       this.animate();
     });
 
-    window.addEventListener('resize', this.onResize.bind(this));
-    window.addEventListener('mousemove', this.onMouseMove.bind(this));
+    window.addEventListener('resize', this.handleResize);
+    window.addEventListener('mousemove', this.handleMouseMove, { passive: true });
+    window.addEventListener('touchmove', this.handleTouchMove, { passive: true });
   }
 
   private onMouseMove(e: MouseEvent): void {
     this.targetMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
     this.targetMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  }
+
+  private onTouchMove(e: TouchEvent): void {
+    if (e.touches && e.touches.length > 0) {
+      const touch = e.touches[0];
+      this.targetMouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+      this.targetMouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+    }
   }
 
   private createSolidTexture(colorHex: string): THREE.Texture {
@@ -444,8 +457,9 @@ export class WebGLSlider {
 
   public destroy(): void {
     if (this.animationId !== null) cancelAnimationFrame(this.animationId);
-    window.removeEventListener('resize', this.onResize.bind(this));
-    window.removeEventListener('mousemove', this.onMouseMove.bind(this));
+    window.removeEventListener('resize', this.handleResize);
+    window.removeEventListener('mousemove', this.handleMouseMove);
+    window.removeEventListener('touchmove', this.handleTouchMove);
     this.renderer.dispose();
     this.material.dispose();
     if (this.container.contains(this.renderer.domElement)) {
