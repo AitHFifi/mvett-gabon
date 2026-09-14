@@ -1,0 +1,659 @@
+---
+// UploadModal.astro — Modale de téléversement de photos par province
+import { provinces } from '../data/provinces';
+---
+
+<div class="upload-modal-backdrop" id="uploadModalBackdrop" aria-hidden="true">
+  <div class="upload-modal" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+    <button class="modal-close-btn" id="closeUploadModalBtn" type="button" aria-label="Fermer la fenêtre">✕</button>
+
+    <div class="upload-header">
+      <span class="upload-badge">Archive Participative</span>
+      <h2 class="upload-title" id="uploadTitle">Ajouter une Photographie</h2>
+      <p class="upload-subtitle">
+        Partagez vos clichés d'une province gabonaise pour les intégrer directement au diaporama 3D.
+      </p>
+    </div>
+
+    <!-- Feedback Message -->
+    <div class="upload-feedback" id="uploadFeedback" style="display: none;"></div>
+
+    <form class="upload-form" id="uploadForm">
+      <!-- Sélection de la province -->
+      <div class="form-group">
+        <label for="provinceSelect" class="form-label">Province du Gabon</label>
+        <div class="select-wrapper">
+          <select id="provinceSelect" class="form-select" required>
+            {provinces.map((prov) => (
+              <option value={prov.id}>
+                {prov.code} — {prov.name} ({prov.capital})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <!-- Zone Drag & Drop / Téléversement Fichier -->
+      <div class="form-group">
+        <label class="form-label">Photographie (Haute Résolution)</label>
+        <div class="dropzone" id="imageDropzone">
+          <input 
+            type="file" 
+            id="photoFileInput" 
+            class="file-input" 
+            accept="image/jpeg,image/png,image/webp" 
+            required 
+          />
+          <div class="dropzone-content" id="dropzonePrompt">
+            <svg class="dropzone-icon" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p class="dropzone-text">Glissez votre image ici ou <span>parcourez vos fichiers</span></p>
+            <p class="dropzone-hint">Formats JPG, PNG, WEBP acceptés</p>
+          </div>
+          <!-- Aperçu de l'image -->
+          <div class="image-preview" id="imagePreview" style="display: none;">
+            <img id="previewImg" src="" alt="Aperçu du cliché" />
+            <button type="button" class="remove-image-btn" id="removeImageBtn" title="Changer d'image">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Titre & Lieu -->
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label for="photoTitleInput" class="form-label">Titre de l'œuvre / Sujet</label>
+          <input 
+            type="text" 
+            id="photoTitleInput" 
+            class="form-input" 
+            placeholder="Ex: Canyons Pourpres de Léconi" 
+            required 
+            maxlength="80"
+          />
+        </div>
+
+        <div class="form-group flex-1">
+          <label for="photoLocationInput" class="form-label">Lieu précis</label>
+          <input 
+            type="text" 
+            id="photoLocationInput" 
+            class="form-input" 
+            placeholder="Ex: Plateau Batéké · Léconi" 
+            required 
+            maxlength="80"
+          />
+        </div>
+      </div>
+
+      <!-- Légende / Description -->
+      <div class="form-group">
+        <label for="photoCaptionInput" class="form-label">Légende & Récit (Optionnel)</label>
+        <textarea 
+          id="photoCaptionInput" 
+          class="form-textarea" 
+          rows="2" 
+          placeholder="Racontez l'histoire, la faune ou l'atmosphère de cette prise de vue..."
+          maxlength="280"
+        ></textarea>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" id="btnCancelUpload">Annuler</button>
+        <button type="submit" class="btn-submit" id="btnSubmitUpload">
+          <span class="btn-text">Publier la photographie</span>
+          <span class="btn-spinner" style="display: none;">Envoi en cours...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  import { photoStore } from '../lib/photo-store';
+
+  function initUploadModal() {
+    const backdrop = document.getElementById('uploadModalBackdrop');
+    const closeBtn = document.getElementById('closeUploadModalBtn');
+    const cancelBtn = document.getElementById('btnCancelUpload');
+    const form = document.getElementById('uploadForm') as HTMLFormElement | null;
+    const fileInput = document.getElementById('photoFileInput') as HTMLInputElement | null;
+    const dropzone = document.getElementById('imageDropzone');
+    const dropzonePrompt = document.getElementById('dropzonePrompt');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg') as HTMLImageElement | null;
+    const removeImgBtn = document.getElementById('removeImageBtn');
+    const provinceSelect = document.getElementById('provinceSelect') as HTMLSelectElement | null;
+    const titleInput = document.getElementById('photoTitleInput') as HTMLInputElement | null;
+    const locationInput = document.getElementById('photoLocationInput') as HTMLInputElement | null;
+    const captionInput = document.getElementById('photoCaptionInput') as HTMLTextAreaElement | null;
+    const feedback = document.getElementById('uploadFeedback');
+    const submitBtn = document.getElementById('btnSubmitUpload') as HTMLButtonElement | null;
+    const btnText = submitBtn?.querySelector('.btn-text') as HTMLElement | null;
+    const btnSpinner = submitBtn?.querySelector('.btn-spinner') as HTMLElement | null;
+
+    let selectedFile: File | null = null;
+
+    function showFeedback(msg: string, isError: boolean = false) {
+      if (!feedback) return;
+      feedback.textContent = msg;
+      feedback.style.display = 'block';
+      feedback.className = `upload-feedback ${isError ? 'error' : 'success'}`;
+    }
+
+    function openModal(defaultProvinceId?: string) {
+      if (!backdrop) return;
+      if (defaultProvinceId && provinceSelect) {
+        provinceSelect.value = defaultProvinceId;
+      }
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+      if (feedback) feedback.style.display = 'none';
+    }
+
+    function closeModal() {
+      if (!backdrop) return;
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+      resetForm();
+    }
+
+    function resetForm() {
+      if (form) form.reset();
+      selectedFile = null;
+      if (previewImg) previewImg.src = '';
+      if (imagePreview) imagePreview.style.display = 'none';
+      if (dropzonePrompt) dropzonePrompt.style.display = 'flex';
+      if (submitBtn) submitBtn.disabled = false;
+      if (btnText) btnText.style.display = 'inline';
+      if (btnSpinner) btnSpinner.style.display = 'none';
+    }
+
+    function handleFile(file: File) {
+      if (!file.type.startsWith('image/')) {
+        showFeedback('Veuillez sélectionner un fichier image valide (JPG, PNG, WEBP).', true);
+        return;
+      }
+      selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (previewImg && e.target?.result) {
+          previewImg.src = e.target.result as string;
+          if (dropzonePrompt) dropzonePrompt.style.display = 'none';
+          if (imagePreview) imagePreview.style.display = 'block';
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Événements d'ouverture
+    window.addEventListener('mvett:open-upload', ((e: CustomEvent) => {
+      openModal(e.detail?.provinceId);
+    }) as EventListener);
+
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    backdrop?.addEventListener('click', (e) => {
+      if (e.target === backdrop) closeModal();
+    });
+
+    // Gestion du fichier
+    fileInput?.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files[0]) {
+        handleFile(fileInput.files[0]);
+      }
+    });
+
+    removeImgBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedFile = null;
+      if (fileInput) fileInput.value = '';
+      if (previewImg) previewImg.src = '';
+      if (imagePreview) imagePreview.style.display = 'none';
+      if (dropzonePrompt) dropzonePrompt.style.display = 'flex';
+    });
+
+    // Drag & Drop
+    dropzone?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+
+    dropzone?.addEventListener('dragleave', () => {
+      dropzone.classList.remove('drag-over');
+    });
+
+    dropzone?.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // Soumission du formulaire
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!selectedFile) {
+        showFeedback('Veuillez sélectionner une photographie.', true);
+        return;
+      }
+
+      const provinceId = provinceSelect?.value || 'estuaire';
+      const title = titleInput?.value.trim() || '';
+      const location = locationInput?.value.trim() || '';
+      const caption = captionInput?.value.trim() || '';
+
+      if (!title || !location) {
+        showFeedback('Le titre et le lieu sont requis.', true);
+        return;
+      }
+
+      // UI Loading State
+      if (submitBtn) submitBtn.disabled = true;
+      if (btnText) btnText.style.display = 'none';
+      if (btnSpinner) btnSpinner.style.display = 'inline';
+
+      showFeedback('Téléversement et traitement en cours...', false);
+
+      const res = await photoStore.uploadPhoto({
+        file: selectedFile,
+        provinceId,
+        title,
+        location,
+        caption,
+      });
+
+      if (res.error) {
+        showFeedback(`Erreur : ${res.error}`, true);
+        if (submitBtn) submitBtn.disabled = false;
+        if (btnText) btnText.style.display = 'inline';
+        if (btnSpinner) btnSpinner.style.display = 'none';
+      } else {
+        showFeedback('Photographie publiée avec succès dans le patrimoine !', false);
+        setTimeout(() => {
+          closeModal();
+        }, 1200);
+      }
+    });
+
+    // Touche Échap
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && backdrop?.classList.contains('open')) {
+        closeModal();
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUploadModal);
+  } else {
+    initUploadModal();
+  }
+</script>
+
+<style>
+  .upload-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(8, 10, 9, 0.76);
+    backdrop-filter: blur(30px) saturate(160%);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    z-index: 120;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s ease;
+  }
+
+  .upload-modal-backdrop.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .upload-modal {
+    position: relative;
+    width: 100%;
+    max-width: 580px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: rgba(20, 24, 23, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 22px;
+    padding: 2.2rem 2.2rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    color: #ffffff;
+    transform: translateY(16px) scale(0.98);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  .upload-modal-backdrop.open .upload-modal {
+    transform: translateY(0) scale(1);
+  }
+
+  .modal-close-btn {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.2rem;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+  }
+
+  .upload-header {
+    text-align: center;
+    margin-bottom: 1.6rem;
+  }
+
+  .upload-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    display: inline-block;
+    margin-bottom: 0.85rem;
+  }
+
+  .upload-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+    font-weight: 600;
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+  }
+
+  .upload-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.55;
+    opacity: 0.7;
+  }
+
+  .upload-feedback {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-align: center;
+    margin-bottom: 1.2rem;
+  }
+
+  .upload-feedback.success {
+    background: rgba(46, 125, 50, 0.25);
+    border: 1px solid rgba(76, 175, 80, 0.4);
+    color: #a5d6a7;
+  }
+
+  .upload-feedback.error {
+    background: rgba(198, 40, 40, 0.25);
+    border: 1px solid rgba(239, 83, 80, 0.4);
+    color: #ef9a9a;
+  }
+
+  .upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 1rem;
+  }
+
+  @media (max-width: 600px) {
+    .form-row {
+      flex-direction: column;
+    }
+  }
+
+  .flex-1 {
+    flex: 1;
+  }
+
+  .form-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .select-wrapper {
+    position: relative;
+  }
+
+  .form-select,
+  .form-input,
+  .form-textarea {
+    width: 100%;
+    padding: 0.75rem 0.95rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 9px;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  .form-select option {
+    background: #1a1e1d;
+    color: #ffffff;
+  }
+
+  .form-select:focus,
+  .form-input:focus,
+  .form-textarea:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .dropzone {
+    position: relative;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    overflow: hidden;
+  }
+
+  .dropzone:hover,
+  .dropzone.drag-over {
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .file-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    pointer-events: none;
+  }
+
+  .dropzone-icon {
+    opacity: 0.6;
+    margin-bottom: 0.2rem;
+  }
+
+  .dropzone-text {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .dropzone-text span {
+    text-decoration: underline;
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .dropzone-hint {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .image-preview {
+    position: relative;
+    width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #000000;
+  }
+
+  .image-preview img {
+    max-height: 200px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .remove-image-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 28px;
+    height: 28px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    transition: background-color 0.2s ease;
+  }
+
+  .remove-image-btn:hover {
+    background: rgba(220, 38, 38, 0.85);
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    margin-top: 0.6rem;
+  }
+
+  .btn-cancel {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0.75rem 1.2rem;
+    border-radius: 9px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+
+  .btn-submit {
+    background: #ffffff;
+    color: #111413;
+    border: none;
+    padding: 0.75rem 1.4rem;
+    border-radius: 9px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+  }
+
+  .btn-submit:hover:not(:disabled) {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 600px) {
+    .upload-modal {
+      padding: 1.5rem 1.1rem;
+      border-radius: 16px;
+      max-height: 92vh;
+    }
+    .upload-title {
+      font-size: 1.45rem;
+    }
+    .form-select,
+    .form-input,
+    .form-textarea {
+      font-size: 16px;
+    }
+    .form-actions {
+      flex-direction: column-reverse;
+      gap: 0.5rem;
+    }
+    .btn-cancel,
+    .btn-submit {
+      width: 100%;
+      text-align: center;
+      padding: 0.8rem 1rem;
+    }
+  }
+</style>

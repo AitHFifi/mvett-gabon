@@ -1,0 +1,278 @@
+---
+import { provinces } from '../data/provinces';
+---
+
+<section class="info-overlay" id="infoOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-label="À propos de MVETT Studio et des 9 Provinces">
+  <div class="info-container">
+    
+    <header class="info-header">
+      <div class="info-brand">
+        <span class="info-logo">MVETT</span>
+        <span class="info-tagline">Studio d'Art & Patrimoine Équatorial</span>
+      </div>
+      <button class="info-close-top" id="closeInfoTopBtn" type="button" aria-label="Fermer le panneau d'information">✕</button>
+    </header>
+
+    <div class="info-grid">
+      <!-- Colonne Gauche (Strictement inchangée à l'exception de l'adresse mail) -->
+      <div class="info-col-left">
+        <h2 class="manifesto-heading">L'âme vivante des<br><em>neuf provinces.</em></h2>
+        <div class="manifesto-body">
+          <p>
+            Nommé en hommage à la grande cithare-harpe et à l'épopée mythologique des Fang, <strong>MVETT</strong> célèbre la grandeur naturelle, architecturale et humaine du Gabon à travers une archive photographique immersive.
+          </p>
+          <p>
+            Avec plus de 88% de son territoire tapissé par la forêt tropicale primaire et un réseau exceptionnel de 13 parcs nationaux préservés, le Gabon constitue l'un des ultimes sanctuaires écologiques et culturels de notre planète.
+          </p>
+          <p>
+            De l'Océan Atlantique aux confins du fleuve Ivindo, des mystères du Lac Bleu aux canyons pourpres de Léconi, chaque province raconte une histoire séculaire où la nature dialogue avec le sacré.
+          </p>
+          
+          <div class="contact-links">
+            <div>
+              <span class="link-label">Contact & Projets</span>
+              <a href="mailto:alloghofrederic9@gmail.com">alloghofrederic9@gmail.com</a>
+            </div>
+            <div>
+              <span class="link-label">Portfolio & Développeur</span>
+              <a href="https://www.allogho.me/" target="_blank" rel="noopener">www.allogho.me ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne Droite (Parfaitement alignée avec la colonne de gauche) -->
+      <div class="info-col-right">
+        <h3 class="manifesto-heading">Une immersion<br><em>visuelle & territoriale.</em></h3>
+        <div class="manifesto-body-right">
+          <p>
+            Conçu comme un hommage vibrant et contemporain, ce projet réunit les neuf provinces gabonaises au sein d'une expérience visuelle sans frontière. De l'estuaire du Komo aux hauteurs mystiques du Woleu-Ntem, la photographie devient le vecteur d'une transmission poétique où chaque lumière, chaque grain et chaque onde reflètent la noblesse de la terre gabonaise.
+          </p>
+          <p>
+            Chaque territoire est exploré sous l'angle de ses paysages indomptés, de son histoire et de son patrimoine immatériel, immortalisant le lien intemporel entre les traditions ancestrales et la modernité créative.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer du Panneau Dépoli -->
+    <footer class="info-footer">
+      <button class="close-pill-btn" id="closeInfoPillBtn" type="button">Fermer [Esc]</button>
+      <div class="developer-credit">
+        Développé par <a href="https://www.allogho.me/" target="_blank" rel="noopener" class="dev-link">Frederic ALLOGHO</a>
+      </div>
+    </footer>
+
+  </div>
+</section>
+
+<style>
+  .info-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 12, 11, 0.78);
+    backdrop-filter: blur(34px) saturate(170%);
+    -webkit-backdrop-filter: blur(34px) saturate(170%);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+    overflow-y: auto;
+  }
+
+  .info-overlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .info-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 3rem 4rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 768px) {
+    .info-container {
+      padding: 2rem 1.4rem;
+    }
+  }
+
+  .info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding-bottom: 1.8rem;
+    margin-bottom: 3rem;
+  }
+
+  .info-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .info-logo {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+  }
+
+  .info-tagline {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+
+  @media (max-width: 640px) {
+    .info-tagline {
+      display: none;
+    }
+  }
+
+  .info-close-top {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: color 0.2s ease;
+  }
+
+  .info-close-top:hover {
+    color: #ffffff;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6vw;
+    margin-bottom: 3.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 960px) {
+    .info-grid {
+      grid-template-columns: 1fr;
+      gap: 2.8rem;
+    }
+  }
+
+  .manifesto-heading {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(2.2rem, 4.2vw, 3.8rem);
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    margin-bottom: 2rem;
+  }
+
+  .manifesto-heading em {
+    font-style: italic;
+    font-weight: 400;
+    opacity: 0.85;
+  }
+
+  .manifesto-body p,
+  .manifesto-body-right p {
+    font-size: 1.08rem;
+    line-height: 1.75;
+    opacity: 0.82;
+    margin-bottom: 1.4rem;
+  }
+
+  .manifesto-body p {
+    max-width: 600px;
+  }
+
+  .manifesto-body-right p {
+    max-width: 600px;
+  }
+
+  .contact-links {
+    margin-top: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    font-family: var(--font-mono);
+  }
+
+  .link-label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.45;
+    margin-bottom: 0.2rem;
+  }
+
+  .contact-links a {
+    color: #ffffff;
+    font-size: 1.05rem;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: opacity 0.2s;
+  }
+
+  .contact-links a:hover {
+    opacity: 0.75;
+  }
+
+  .info-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 2rem;
+  }
+
+  .close-pill-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.65rem 1.4rem;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .close-pill-btn:hover {
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
+  }
+
+  .developer-credit {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.04em;
+  }
+
+  .dev-link {
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: opacity 0.2s ease;
+  }
+
+  .dev-link:hover {
+    opacity: 0.75;
+  }
+</style>

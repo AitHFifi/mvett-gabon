@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smörgåsbord-Inspired Studio Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Space Grotesk', monospace;
+      --transition-speed: 0.65s;
+      --transition-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0d0d0d;
+      color: #ffffff;
+      font-family: var(--font-main);
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    /* Fullscreen Slideshow Canvas */
+    .viewport {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      cursor: crosshair;
+      transition: background-color var(--transition-speed) var(--transition-ease);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.97);
+      transition: opacity var(--transition-speed) var(--transition-ease),
+                  transform var(--transition-speed) var(--transition-ease),
+                  visibility 0s linear var(--transition-speed);
+      padding: 5vw;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1);
+      transition: opacity var(--transition-speed) var(--transition-ease),
+                  transform var(--transition-speed) var(--transition-ease),
+                  visibility 0s;
+    }
+
+    .media-card {
+      position: relative;
+      max-width: 90vw;
+      max-height: 82vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+      border-radius: 4px;
+      overflow: hidden;
+      transition: transform 0.4s var(--transition-ease);
+    }
+
+    .media-card img, .media-card video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-height: 82vh;
+      object-fit: contain;
+    }
+
+    /* Typographic Art Slide */
+    .type-slide {
+      text-align: center;
+      max-width: 1200px;
+    }
+
+    .type-slide .big-glyph {
+      font-family: var(--font-mono);
+      font-size: clamp(4rem, 16vw, 15rem);
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      line-height: 0.9;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .type-slide .subline {
+      font-size: clamp(1rem, 2vw, 1.6rem);
+      font-weight: 400;
+      opacity: 0.85;
+      letter-spacing: -0.02em;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* HUD / Controls */
+    .hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2.2rem 3rem;
+    }
+
+    @media (max-width: 768px) {
+      .hud {
+        padding: 1.5rem;
+      }
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .brand-button {
+      pointer-events: auto;
+      background: none;
+      border: none;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      margin-left: -0.8rem;
+      border-radius: 6px;
+      transition: background-color 0.2s, opacity 0.2s;
+    }
+
+    .brand-button:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .brand-button .badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .slide-counter {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+
+    .caption {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+      opacity: 0.8;
+      max-width: 320px;
+    }
+
+    .nav-hints {
+      display: flex;
+      gap: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      opacity: 0.5;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* Sound Switch */
+    .sound-toggle {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+
+    .sound-toggle:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.6);
+      width: 0%;
+      z-index: 60;
+      transition: width var(--transition-speed) var(--transition-ease);
+    }
+
+    /* Info Slide-Over Overlay */
+    .info-overlay {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(10, 10, 10, 0.65);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.45s var(--transition-ease), visibility 0.45s;
+      overflow-y: auto;
+      padding: 8vw 10vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .info-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 6vw;
+      max-width: 1400px;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+    }
+
+    .info-col-left h2 {
+      font-size: clamp(2rem, 4.5vw, 3.8rem);
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 2rem;
+    }
+
+    .info-col-left p {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      opacity: 0.8;
+      max-width: 620px;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-col-left a {
+      color: #fff;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .info-col-right {
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    .service-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem 2rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      letter-spacing: -0.01em;
+      opacity: 0.85;
+    }
+
+    .close-btn {
+      align-self: flex-start;
+      margin-top: 4rem;
+      background: none;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      font-family: var(--font-mono);
+      padding: 0.8rem 1.6rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    /* Custom Click Cursor Hint */
+    .cursor-hint {
+      position: fixed;
+      pointer-events: none;
+      z-index: 80;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.2s;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Viewport Slide Canvas -->
+  <div class="viewport" id="viewport">
+    
+    <!-- Slide 0: Bold Typographic Identity / Vermillion Red -->
+    <div class="slide active" data-bg="#9e181f" data-caption="AFC Ajax — Brand Architecture & Identity">
+      <div class="type-slide">
+        <div class="big-glyph">SMÖRGÅS</div>
+        <p class="subline">Branding, strategy & art direction — a curated selection of good things.</p>
+      </div>
+    </div>
+
+    <!-- Slide 1: High-Contrast Minimalist Media -->
+    <div class="slide" data-bg="#121212" data-caption="Cymru — The National Brand for Wales">
+      <figure class="media-card">
+        <img src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=2070&auto=format&fit=crop" alt="Fluid abstract texture" loading="eager">
+      </figure>
+    </div>
+
+    <!-- Slide 2: Architectural Monochrome -->
+    <div class="slide" data-bg="#343834" data-caption="Form & Volume — Spatial Exhibition Design">
+      <figure class="media-card">
+        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop" alt="Modernist Architecture" loading="lazy">
+      </figure>
+    </div>
+
+    <!-- Slide 3: Electric Klein Blue / Kinetic Type -->
+    <div class="slide" data-bg="#0b24fb" data-caption="Kinetic Identity & Modular Typeface">
+      <div class="type-slide">
+        <div class="big-glyph" style="font-style: italic;">EXPLORE</div>
+        <p class="subline">Concept-led experiences that bridge the digital and physical worlds.</p>
+      </div>
+    </div>
+
+    <!-- Slide 4: Warm Ochre Sand / Editorial -->
+    <div class="slide" data-bg="#965638" data-caption="Heritage Editorial & Fine Publishing">
+      <figure class="media-card">
+        <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=2071&auto=format&fit=crop" alt="Editorial Portraiture" loading="lazy">
+      </figure>
+    </div>
+
+    <!-- Slide 5: Raw Charcoal Black -->
+    <div class="slide" data-bg="#000000" data-caption="Sound & Vision — Broadcast Art Direction">
+      <div class="type-slide">
+        <div class="big-glyph" style="letter-spacing: -0.08em;">BORD.</div>
+        <p class="subline">Amsterdam & Cardiff. Working worldwide.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- HUD Interface -->
+  <aside class="hud">
+    <div class="hud-top">
+      <button class="brand-button" id="toggleInfo" aria-label="Toggle Studio Info">
+        <span>SMÖRGÅSBORD</span>
+        <span class="badge">Info</span>
+      </button>
+
+      <div class="hud-right" style="display: flex; gap: 1.5rem; align-items: center;">
+        <button class="sound-toggle" id="soundToggle">
+          <span id="soundIcon">🔊</span>
+          <span id="soundText">Sound ON</span>
+        </button>
+        <div class="slide-counter" id="counter">01 / 06</div>
+      </div>
+    </div>
+
+    <div class="hud-bottom">
+      <div class="caption" id="captionText">AFC Ajax — Brand Architecture & Identity</div>
+      <div class="nav-hints">
+        <span>Click screen or Space to advance</span>
+        <span>← / → Arrows</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Progress Bar Indicator -->
+  <div class="progress-bar" id="progressBar"></div>
+
+  <!-- Custom Cursor -->
+  <div class="cursor-hint" id="cursorHint">Next →</div>
+
+  <!-- Frosted Glass Info Overlay -->
+  <section class="info-overlay" id="infoOverlay" aria-hidden="true">
+    <div class="info-grid">
+      <div class="info-col-left">
+        <h2>A selection of good things.</h2>
+        <p>Based in Amsterdam and working globally, the studio crafts memorable brand experiences that bridge physical spaces and digital interactions.</p>
+        <p>Our work spans identity systems, interior installations, custom typography, furniture, art direction, and digital products.</p>
+        <p>Inquiries: <a href="mailto:hello@studio.com">hello@studio.com</a><br>Follow: <a href="#">@smorgasbord_studio</a></p>
+      </div>
+
+      <div class="info-col-right">
+        <div>
+          <h4 style="font-family: var(--font-mono); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; opacity: 0.5; margin-bottom: 1.2rem;">Disciplines</h4>
+          <ul class="service-list">
+            <li>Brand Identity</li>
+            <li>Custom Typefaces</li>
+            <li>Creative Direction</li>
+            <li>Exhibition Design</li>
+            <li>Editorial & Print</li>
+            <li>Motion Design</li>
+            <li>Strategy & Naming</li>
+            <li>Digital Experiences</li>
+            <li>Packaging</li>
+            <li>Architecture & Interiors</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <button class="close-btn" id="closeInfo">Close (Esc)</button>
+  </section>
+
+  <script>
+    (function () {
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const viewport = document.getElementById('viewport');
+      const counter = document.getElementById('counter');
+      const captionText = document.getElementById('captionText');
+      const progressBar = document.getElementById('progressBar');
+      const infoOverlay = document.getElementById('infoOverlay');
+      const toggleInfoBtn = document.getElementById('toggleInfo');
+      const closeInfoBtn = document.getElementById('closeInfo');
+      const cursorHint = document.getElementById('cursorHint');
+      const soundToggle = document.getElementById('soundToggle');
+      const soundIcon = document.getElementById('soundIcon');
+      const soundText = document.getElementById('soundText');
+
+      let currentIndex = 0;
+      let soundEnabled = true;
+      let audioCtx = null;
+
+      // Subtle Web Audio Click Synthesizer (Analog camera / tactile tick)
+      function playClickSound() {
+        if (!soundEnabled) return;
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+
+          gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.05);
+        } catch (e) {}
+      }
+
+      function updateSlide(index, forward = true) {
+        if (index < 0) index = slides.length - 1;
+        if (index >= slides.length) index = 0;
+
+        slides[currentIndex].classList.remove('active');
+        currentIndex = index;
+        const currentSlide = slides[currentIndex];
+
+        currentSlide.classList.add('active');
+
+        // Update Background Color smoothly
+        const bg = currentSlide.getAttribute('data-bg') || '#0d0d0d';
+        viewport.style.backgroundColor = bg;
+
+        // Update Counter (01 / 06)
+        const currentStr = String(currentIndex + 1).padStart(2, '0');
+        const totalStr = String(slides.length).padStart(2, '0');
+        counter.textContent = `${currentStr} / ${totalStr}`;
+
+        // Update Caption
+        const cap = currentSlide.getAttribute('data-caption') || '';
+        captionText.textContent = cap;
+
+        // Update Progress Bar
+        const progress = ((currentIndex + 1) / slides.length) * 100;
+        progressBar.style.width = `${progress}%`;
+
+        playClickSound();
+      }
+
+      // Initial State
+      updateSlide(0);
+
+      // Viewport Click Interaction (Left half = prev, Right half = next)
+      viewport.addEventListener('click', (e) => {
+        if (infoOverlay.classList.contains('open')) return;
+        const midPoint = window.innerWidth * 0.35;
+        if (e.clientX < midPoint) {
+          updateSlide(currentIndex - 1, false);
+        } else {
+          updateSlide(currentIndex + 1, true);
+        }
+      });
+
+      // Cursor Hint Tracker
+      window.addEventListener('mousemove', (e) => {
+        cursorHint.style.left = `${e.clientX}px`;
+        cursorHint.style.top = `${e.clientY - 30}px`;
+        cursorHint.style.opacity = '1';
+
+        const midPoint = window.innerWidth * 0.35;
+        if (e.clientX < midPoint) {
+          cursorHint.textContent = '← Prev';
+        } else {
+          cursorHint.textContent = 'Next →';
+        }
+      });
+
+      document.body.addEventListener('mouseleave', () => {
+        cursorHint.style.opacity = '0';
+      });
+
+      // Keyboard Controls
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeInfo();
+          return;
+        }
+        if (infoOverlay.classList.contains('open')) return;
+
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          updateSlide(currentIndex + 1, true);
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          updateSlide(currentIndex - 1, false);
+        }
+      });
+
+      // Info Overlay Logic
+      function openInfo() {
+        infoOverlay.classList.add('open');
+        infoOverlay.setAttribute('aria-hidden', 'false');
+        cursorHint.style.opacity = '0';
+      }
+
+      function closeInfo() {
+        infoOverlay.classList.remove('open');
+        infoOverlay.setAttribute('aria-hidden', 'true');
+      }
+
+      toggleInfoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (infoOverlay.classList.contains('open')) closeInfo();
+        else openInfo();
+      });
+
+      closeInfoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeInfo();
+      });
+
+      // Sound Toggle Logic
+      soundToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        soundEnabled = !soundEnabled;
+        if (soundEnabled) {
+          soundIcon.textContent = '🔊';
+          soundText.textContent = 'Sound ON';
+          playClickSound();
+        } else {
+          soundIcon.textContent = '🔇';
+          soundText.textContent = 'Muted';
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>

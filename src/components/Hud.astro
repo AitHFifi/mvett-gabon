@@ -1,0 +1,513 @@
+---
+// Hud.astro — Interface minimale & contrôles MVETT
+---
+
+<!-- HUD Top Bar & Caption Overlay -->
+<aside class="hud-overlay" aria-label="Contrôles et statut de la galerie">
+  
+  <!-- En-tête supérieur -->
+  <div class="hud-top">
+    <div class="brand-group">
+      <button class="brand-button" id="toggleInfoBtn" type="button" aria-label="Ouvrir le manifeste MVETT">
+        <span class="brand-title">MVETT</span>
+        <span class="badge">Info</span>
+      </button>
+      <span class="brand-sub">Gabon · 9 Provinces</span>
+    </div>
+
+    <div class="hud-top-right">
+      <div class="counter" id="hudCounter" aria-live="polite">01 / 03 · G1 ESTUAIRE</div>
+
+      <!-- Action de contribution épurée -->
+      <div class="hud-actions-group">
+        <!-- Pastille utilisateur connecté -->
+        <div class="user-pill" id="hudUserPill" style="display: none;">
+          <img class="user-pill-avatar" id="hudUserAvatar" src="" alt="" />
+          <span class="user-pill-name" id="hudUserName"></span>
+          <button class="user-pill-logout" id="hudBtnLogout" title="Se déconnecter" type="button">✕</button>
+        </div>
+
+        <!-- Bouton Galerie / Archives -->
+        <button class="hud-btn-gallery" id="btnOpenGallery" type="button" aria-label="Explorer la galerie citoyenne">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span>Galerie</span>
+        </button>
+
+        <!-- Bouton unique Contribuer -->
+        <button class="hud-btn-upload" id="btnOpenUpload" type="button" aria-label="Téléverser une photographie">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Contribuer</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Légende au-dessus du footer -->
+  <div class="hud-caption-bar">
+    <div class="caption-block">
+      <h1 class="photo-title" id="hudTitle">Estuaire du Komo & Front de Mer</h1>
+      <p class="photo-location" id="hudLocation">Libreville · Estuaire</p>
+    </div>
+
+    <div class="nav-hints" aria-hidden="true">
+      <span class="hint-desktop">Cliquer ou Espace pour avancer</span>
+      <span class="hint-keys">← / →</span>
+    </div>
+  </div>
+
+</aside>
+
+<!-- Barre de progression discrète -->
+<div class="progress-bar" id="hudProgressBar" role="progressbar" aria-valuenow="11" aria-valuemin="0" aria-valuemax="100"></div>
+
+<!-- Curseur suiveur directionnel -->
+<div class="cursor-pill" id="cursorPill" aria-hidden="true">Next →</div>
+
+<script>
+  import { photoStore, type UserProfile } from '../lib/photo-store';
+
+  function initHud() {
+    const btnUpload = document.getElementById('btnOpenUpload');
+    const btnGallery = document.getElementById('btnOpenGallery');
+    const userPill = document.getElementById('hudUserPill');
+    const userAvatar = document.getElementById('hudUserAvatar') as HTMLImageElement | null;
+    const userName = document.getElementById('hudUserName');
+    const btnLogout = document.getElementById('hudBtnLogout');
+
+    let currentProvinceId = 'estuaire';
+    let currentUser: UserProfile | null = null;
+
+    window.addEventListener('mvett:slide-changed', ((e: CustomEvent) => {
+      if (e.detail?.slide?.provinceId) {
+        currentProvinceId = e.detail.slide.provinceId;
+      }
+    }) as EventListener);
+
+    function updateUserUI(user: UserProfile | null) {
+      currentUser = user;
+      if (user) {
+        if (userPill) userPill.style.display = 'inline-flex';
+        if (userName) userName.textContent = user.name;
+        if (userAvatar) {
+          if (user.avatar) {
+            userAvatar.src = user.avatar;
+            userAvatar.style.display = 'block';
+          } else {
+            userAvatar.style.display = 'none';
+          }
+        }
+      } else {
+        if (userPill) userPill.style.display = 'none';
+      }
+    }
+
+    photoStore.getCurrentUser().then(updateUserUI);
+
+    window.addEventListener('mvett:auth-changed', ((e: CustomEvent) => {
+      updateUserUI(e.detail);
+    }) as EventListener);
+
+    btnGallery?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('mvett:open-gallery', { detail: { provinceId: currentProvinceId } }));
+    });
+
+    btnUpload?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (currentUser) {
+        window.dispatchEvent(new CustomEvent('mvett:open-upload', { detail: { provinceId: currentProvinceId } }));
+      } else {
+        window.dispatchEvent(new CustomEvent('mvett:open-auth', { detail: { nextAction: 'upload', provinceId: currentProvinceId } }));
+      }
+    });
+
+    btnLogout?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      await photoStore.logout();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHud);
+  } else {
+    initHud();
+  }
+</script>
+
+<style>
+  .hud-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2.2rem 3rem 6rem 3rem;
+  }
+
+  @media (max-width: 768px) {
+    .hud-overlay {
+      padding: 1.4rem 1.4rem 5.8rem 1.4rem;
+    }
+  }
+
+  .hud-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.2rem;
+  }
+
+  .brand-group {
+    display: flex;
+    align-items: baseline;
+    gap: 1.2rem;
+  }
+
+  .brand-button {
+    pointer-events: auto;
+    background: none;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.4rem 0.6rem;
+    margin-left: -0.6rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+  }
+
+  .brand-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .brand-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    padding: 0.18rem 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .brand-sub {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  }
+
+  @media (max-width: 640px) {
+    .brand-sub {
+      display: none;
+    }
+  }
+
+  .hud-top-right {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    pointer-events: auto;
+    z-index: 55;
+  }
+
+  .counter {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    opacity: 0.9;
+    white-space: nowrap;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .hud-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    pointer-events: auto;
+  }
+
+  .hud-btn-gallery {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 0.42rem 0.95rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.4);
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hud-btn-gallery:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.45);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+
+  .hud-btn-upload {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.42rem 0.95rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hud-btn-upload:hover {
+    background: #ffffff;
+    color: #121514;
+    border-color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 18px rgba(255, 255, 255, 0.25);
+  }
+
+  .user-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.24rem 0.55rem 0.24rem 0.4rem;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: #ffffff;
+    pointer-events: auto;
+  }
+
+  .user-pill-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .user-pill-name {
+    max-width: 95px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.9;
+  }
+
+  .user-pill-logout {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    cursor: pointer;
+    pointer-events: auto;
+    padding: 0 0.15rem;
+    transition: color 0.15s ease;
+  }
+
+  .user-pill-logout:hover {
+    color: #ef4444;
+  }
+
+  @media (max-width: 640px) {
+    .counter {
+      display: none;
+    }
+  }
+
+  .hud-caption-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 0.4rem;
+  }
+
+  .caption-block {
+    max-width: 540px;
+  }
+
+  .photo-title {
+    font-family: var(--font-mono);
+    font-size: clamp(1rem, 1.4vw, 1.35rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
+  }
+
+  .photo-location {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    opacity: 0.75;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+  }
+
+  .nav-hints {
+    display: flex;
+    gap: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    opacity: 0.55;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+  }
+
+  @media (max-width: 768px), (pointer: coarse) {
+    .hud-overlay {
+      padding: 1rem 1rem calc(5.6rem + env(safe-area-inset-bottom, 0px)) 1rem;
+    }
+    .hud-top {
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .brand-group {
+      gap: 0.4rem;
+    }
+    .brand-title {
+      font-size: 1.35rem;
+    }
+    .brand-button {
+      padding: 0.25rem 0.35rem;
+      margin-left: -0.35rem;
+      gap: 0.45rem;
+    }
+    .badge {
+      font-size: 0.62rem;
+      padding: 0.15rem 0.42rem;
+    }
+    .hud-top-right {
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+    .user-pill {
+      padding: 0.2rem 0.4rem 0.2rem 0.35rem;
+      gap: 0.35rem;
+    }
+    .user-pill-name {
+      display: none; /* Cacher le nom textuel sur mobile pour un en-tête compact et harmonieux */
+    }
+    .user-pill-avatar {
+      width: 20px;
+      height: 20px;
+    }
+    .hud-btn-gallery,
+    .hud-btn-upload {
+      padding: 0.35rem 0.65rem;
+      font-size: 0.72rem;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+    .caption-block {
+      max-width: 90vw;
+    }
+    .photo-title {
+      font-size: 1.12rem;
+      line-height: 1.25;
+      margin-bottom: 0.2rem;
+    }
+    .photo-location {
+      font-size: 0.7rem;
+    }
+    .nav-hints {
+      display: none;
+    }
+    .cursor-pill {
+      display: none !important;
+    }
+  }
+
+  .progress-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 2.5px;
+    background: #ffffff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    width: 0%;
+    z-index: 60;
+    transition: width 0.4s ease;
+  }
+
+  .cursor-pill {
+    position: fixed;
+    pointer-events: none;
+    z-index: 80;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    white-space: nowrap;
+    color: #ffffff;
+  }
+</style>

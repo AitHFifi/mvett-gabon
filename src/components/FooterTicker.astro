@@ -1,0 +1,135 @@
+---
+import { provinces } from '../data/provinces';
+---
+
+<footer class="footer-ticker-bar" id="footerTickerBar" aria-label="Navigation des 9 Provinces du Gabon">
+  <div class="ticker-track" id="tickerTrack" role="tablist">
+    {provinces.map((prov, index) => (
+      <button 
+        class={`ticker-item ${index === 0 ? 'active' : ''}`}
+        data-province-index={index}
+        role="tab"
+        aria-selected={index === 0 ? "true" : "false"}
+        id={`tab-province-${index}`}
+        aria-controls={`panel-province-${index}`}
+      >
+        <span class="item-name">{prov.code} · {prov.name.toUpperCase()}</span>
+        <span class="item-meta">2026—{prov.capital}</span>
+      </button>
+    ))}
+  </div>
+</footer>
+
+<style>
+  .footer-ticker-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    z-index: 55;
+    padding: 1.2rem 2rem 1.6rem 2rem;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0.85) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .footer-ticker-bar {
+      padding: 0.6rem 0.8rem calc(0.8rem + env(safe-area-inset-bottom, 0px)) 0.8rem;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 35%, rgba(0, 0, 0, 0.95) 100%);
+    }
+  }
+
+  .ticker-track {
+    display: flex;
+    align-items: flex-start;
+    justify-content: safe center;
+    gap: 2.2rem;
+    width: auto;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    pointer-events: auto;
+    padding: 0 1.5rem 0.2rem 1.5rem;
+    scrollbar-width: none; /* Firefox */
+    margin: 0 auto;
+  }
+
+  @media (max-width: 768px) {
+    .ticker-track {
+      gap: 1.4rem;
+      padding: 0 0.8rem 0.2rem 0.8rem;
+      justify-content: flex-start;
+    }
+  }
+
+  .ticker-track::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }
+
+  .ticker-item {
+    background: none;
+    border: none;
+    padding: 0.2rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    cursor: pointer;
+    white-space: nowrap;
+    opacity: 0.42;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease;
+    text-align: left;
+    outline: none;
+    position: relative;
+  }
+
+  .ticker-item:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+  }
+
+  .ticker-item.active {
+    opacity: 1;
+  }
+
+  .item-name {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  }
+
+  .item-meta {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.75);
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  }
+
+  .ticker-item.active .item-meta {
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  /* Indicator underline on active province */
+  .ticker-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 1.5px;
+    background: #ffffff;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+    border-radius: 1px;
+  }
+</style>

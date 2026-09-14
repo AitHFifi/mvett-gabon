@@ -1,0 +1,355 @@
+---
+import { provinces, getFlattenedSlides } from '../data/provinces';
+
+const initialSlides = getFlattenedSlides();
+const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
+---
+
+<div class="slideshow-wrapper" id="slideshowWrapper">
+  <!-- Three.js Canvas Container -->
+  <div class="webgl-canvas-container" id="webglContainer"></div>
+
+  <!-- Ambient Color Backdrop -->
+  <div class="color-backdrop" id="colorBackdrop" style={`background-color: ${initialBg};`}></div>
+</div>
+
+<script>
+  import { provinces, getFlattenedSlides, type FlatSlide, type ProvincePhoto } from '../data/provinces';
+  import { WebGLSlider } from '../scripts/webgl-slider';
+  import { photoStore } from '../lib/photo-store';
+
+  function initSlideshow() {
+    const container = document.getElementById('webglContainer');
+    const backdrop = document.getElementById('colorBackdrop');
+    const hudCounter = document.getElementById('hudCounter');
+    const hudTitle = document.getElementById('hudTitle');
+    const hudLocation = document.getElementById('hudLocation');
+    const hudProgressBar = document.getElementById('hudProgressBar');
+    const cursorPill = document.getElementById('cursorPill');
+    const infoOverlay = document.getElementById('infoOverlay');
+    const toggleInfoBtn = document.getElementById('toggleInfoBtn');
+    const closeInfoTopBtn = document.getElementById('closeInfoTopBtn');
+    const closeInfoPillBtn = document.getElementById('closeInfoPillBtn');
+    const tickerTrack = document.getElementById('tickerTrack');
+
+    if (!container || !backdrop) return;
+
+    let currentSlides: FlatSlide[] = getFlattenedSlides();
+
+    async function buildCombinedSlides(): Promise<FlatSlide[]> {
+      const communityPhotos = await photoStore.getPhotos();
+      const combined: FlatSlide[] = [];
+
+      provinces.forEach((prov, pIdx) => {
+        const provPhotos: Array<ProvincePhoto & { isCommunity?: boolean }> = [...prov.photos];
+
+        // Ajouter les photos communautaires de cette province
+        const cPhotos = communityPhotos.filter((cp) => cp.province_id === prov.id);
+        cPhotos.forEach((cp) => {
+          provPhotos.push({
+            id: cp.id,
+            title: cp.title,
+            location: cp.location,
+            image: cp.image_url,
+            caption: cp.caption,
+            backgroundColor: cp.background_color || '#1b2c34',
+            isCommunity: true,
+          });
+        });
+
+        provPhotos.forEach((photo, phIdx) => {
+          combined.push({
+            ...photo,
+            provinceId: prov.id,
+            provinceIndex: pIdx,
+            provinceCode: prov.code,
+            provinceName: prov.name,
+            provinceCapital: prov.capital,
+            photoIndexInProvince: phIdx,
+            totalPhotosInProvince: provPhotos.length,
+          });
+        });
+      });
+
+      return combined;
+    }
+
+    let soundEnabled = false;
+    let audioCtx: AudioContext | null = null;
+
+    // Tactile Audio Synthesis (subtle shutter click)
+    function playTactileClick() {
+      if (!soundEnabled) return;
+      try {
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!audioCtx) audioCtx = new AudioContextClass();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(840, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.035);
+
+        gain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.035);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.045);
+      } catch (e) {
+        // Ignored if user hasn't interacted yet
+      }
+    }
+
+    // Initialize WebGL Slider Engine with Initial Slides
+    const slider = new WebGLSlider({
+      container,
+      slides: currentSlides,
+      onSlideChange: (index, slide) => {
+        // Update smooth background canvas color
+        backdrop.style.backgroundColor = slide.backgroundColor;
+
+        // Update HUD Counter (e.g. "01 / 03 · G1 ESTUAIRE")
+        if (hudCounter) {
+          const curPhoto = String(slide.photoIndexInProvince + 1).padStart(2, '0');
+          const totPhoto = String(slide.totalPhotosInProvince).padStart(2, '0');
+          hudCounter.textContent = `${curPhoto} / ${totPhoto} · ${slide.provinceCode} ${slide.provinceName.toUpperCase()}`;
+        }
+
+        // Update Title & Location
+        if (hudTitle) hudTitle.textContent = slide.title;
+        if (hudLocation) hudLocation.textContent = slide.location;
+
+        // Update Progress Bar
+        if (hudProgressBar) {
+          const progress = ((index + 1) / currentSlides.length) * 100;
+          hudProgressBar.style.width = `${progress}%`;
+          hudProgressBar.setAttribute('aria-valuenow', String(Math.round(progress)));
+        }
+
+        // Synchronize Horizontal Footer Ticker
+        const tickerItems = document.querySelectorAll('.ticker-item');
+        tickerItems.forEach((btn) => {
+          const pIdx = Number(btn.getAttribute('data-province-index'));
+          const isActive = pIdx === slide.provinceIndex;
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+          if (isActive) {
+            btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        });
+
+        // Notifier le HUD du changement de diapositive / province
+        window.dispatchEvent(
+          new CustomEvent('mvett:slide-changed', {
+            detail: { slide, index },
+          })
+        );
+
+        playTactileClick();
+      },
+    });
+
+    // Charger et injecter les photos communautaires initiales
+    buildCombinedSlides().then((fullSlides) => {
+      if (fullSlides.length > currentSlides.length) {
+        currentSlides = fullSlides;
+        slider.updateSlides(currentSlides);
+      }
+    });
+
+    // Écouter les mises à jour des photos (nouveau téléversement ou suppression)
+    window.addEventListener('mvett:photos-updated', (async (e: CustomEvent) => {
+      const updatedSlides = await buildCombinedSlides();
+      currentSlides = updatedSlides;
+      const targetId = e.detail?.id;
+      let targetIndex: number | undefined = undefined;
+      if (targetId) {
+        const found = updatedSlides.findIndex((s) => s.id === targetId);
+        if (found !== -1) targetIndex = found;
+      }
+      await slider.updateSlides(updatedSlides, targetIndex);
+    }) as EventListener);
+
+    // Écouter le saut direct vers une photo précise (depuis la galerie)
+    window.addEventListener('mvett:jump-to-slide', ((e: CustomEvent) => {
+      if (e.detail?.photoId) {
+        slider.goToSlideById(e.detail.photoId);
+      }
+    }) as EventListener);
+
+    // Handle Footer Ticker item clicks (jump straight to province)
+    if (tickerTrack) {
+      tickerTrack.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const item = target.closest('.ticker-item') as HTMLElement | null;
+        if (item) {
+          const pIdx = Number(item.getAttribute('data-province-index'));
+          if (!isNaN(pIdx)) {
+            slider.goToProvince(pIdx);
+          }
+        }
+      });
+    }
+
+    // Viewport Click Navigation
+    window.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      // Do not advance if clicking interactive elements or modals
+      if (
+        target.closest('.brand-button') ||
+        target.closest('.sound-toggle') ||
+        target.closest('.footer-ticker-bar') ||
+        target.closest('.info-overlay') ||
+        target.closest('.hud-actions-group') ||
+        target.closest('.auth-modal-backdrop') ||
+        target.closest('.upload-modal-backdrop') ||
+        target.closest('.gallery-drawer-backdrop') ||
+        target.closest('button') ||
+        target.closest('a') ||
+        target.closest('input') ||
+        target.closest('select') ||
+        target.closest('textarea')
+      ) {
+        return;
+      }
+      if (infoOverlay?.classList.contains('open')) return;
+      if (document.querySelector('.auth-modal-backdrop.open')) return;
+      if (document.querySelector('.upload-modal-backdrop.open')) return;
+      if (document.querySelector('.gallery-drawer-backdrop.open')) return;
+
+      const threshold = window.innerWidth * 0.35;
+      if (e.clientX < threshold) {
+        slider.prev();
+      } else {
+        slider.next();
+      }
+    });
+
+
+    // Cursor Follower with directional text
+    window.addEventListener('mousemove', (e) => {
+      if (!cursorPill) return;
+      cursorPill.style.left = `${e.clientX}px`;
+      cursorPill.style.top = `${e.clientY - 30}px`;
+      cursorPill.style.opacity = '1';
+
+      const threshold = window.innerWidth * 0.35;
+      if (e.clientX < threshold) {
+        cursorPill.textContent = '← Prev';
+      } else {
+        cursorPill.textContent = 'Next →';
+      }
+    });
+
+    document.body.addEventListener('mouseleave', () => {
+      if (cursorPill) cursorPill.style.opacity = '0';
+    });
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeInfo();
+        return;
+      }
+      if (infoOverlay?.classList.contains('open')) return;
+
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        slider.next();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        slider.prev();
+      }
+    });
+
+    // Touch Swipe Detection
+    let touchStartX = 0;
+    window.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+
+    window.addEventListener('touchend', (e) => {
+      if (infoOverlay?.classList.contains('open')) return;
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchStartX - touchEndX;
+
+      if (Math.abs(diff) > 45) {
+        if (diff > 0) slider.next();
+        else slider.prev();
+      }
+    }, { passive: true });
+
+    // Info Overlay Open / Close
+    function openInfo() {
+      infoOverlay?.classList.add('open');
+      infoOverlay?.setAttribute('aria-hidden', 'false');
+      if (cursorPill) cursorPill.style.opacity = '0';
+    }
+
+    function closeInfo() {
+      infoOverlay?.classList.remove('open');
+      infoOverlay?.setAttribute('aria-hidden', 'true');
+    }
+
+    toggleInfoBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (infoOverlay?.classList.contains('open')) closeInfo();
+      else openInfo();
+    });
+
+    closeInfoTopBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeInfo();
+    });
+
+    closeInfoPillBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeInfo();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSlideshow);
+  } else {
+    initSlideshow();
+  }
+</script>
+
+<style>
+  .slideshow-wrapper {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  .webgl-canvas-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+  }
+
+  .webgl-canvas-container canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .color-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    transition: background-color 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+</style>

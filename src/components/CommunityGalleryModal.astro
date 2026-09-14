@@ -1,0 +1,639 @@
+---
+// CommunityGalleryModal.astro — Galerie des contributions citoyennes par province
+import { provinces } from '../data/provinces';
+---
+
+<div class="gallery-drawer-backdrop" id="galleryDrawerBackdrop" aria-hidden="true">
+  <div class="gallery-drawer" role="dialog" aria-modal="true" aria-labelledby="galleryTitle">
+    
+    <header class="gallery-drawer-header">
+      <div class="header-left">
+        <span class="gallery-badge">Archive Participative</span>
+        <h2 class="gallery-title" id="galleryTitle">Galerie Communautaire</h2>
+        <p class="gallery-subtitle">Les regards des voyageurs et habitants sur les 9 Provinces du Gabon</p>
+      </div>
+
+      <div class="header-actions">
+        <button type="button" class="btn-drawer-upload" id="btnDrawerUpload">
+          + Contribuer
+        </button>
+        <button type="button" class="drawer-close-btn" id="closeGalleryDrawerBtn" aria-label="Fermer la galerie">✕</button>
+      </div>
+    </header>
+
+    <!-- Filtres par Province -->
+    <div class="province-filter-bar">
+      <button type="button" class="filter-chip active" data-province="all">Toutes</button>
+      {provinces.map((prov) => (
+        <button type="button" class="filter-chip" data-province={prov.id}>
+          {prov.code} {prov.name}
+        </button>
+      ))}
+    </div>
+
+    <!-- Grille des photographies -->
+    <div class="gallery-grid-container">
+      <div class="gallery-grid" id="communityGrid">
+        <!-- Rempli dynamiquement en JS -->
+      </div>
+
+      <!-- État vide -->
+      <div class="gallery-empty-state" id="galleryEmptyState" style="display: none;">
+        <div class="empty-icon">📷</div>
+        <h3 class="empty-title">Aucune photo pour cette province</h3>
+        <p class="empty-desc">Soyez le premier à immortaliser ce territoire et à partager sa beauté.</p>
+        <button type="button" class="btn-empty-upload" id="btnEmptyUpload">+ Ajouter un cliché</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  import { photoStore, type CommunityPhoto, type UserProfile } from '../lib/photo-store';
+  import { provinces } from '../data/provinces';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const backdrop = document.getElementById('galleryDrawerBackdrop');
+    const closeBtn = document.getElementById('closeGalleryDrawerBtn');
+    const btnDrawerUpload = document.getElementById('btnDrawerUpload');
+    const btnEmptyUpload = document.getElementById('btnEmptyUpload');
+    const grid = document.getElementById('communityGrid');
+    const emptyState = document.getElementById('galleryEmptyState');
+    const filterChips = document.querySelectorAll('.filter-chip');
+
+    let currentFilter = 'all';
+    let currentUser: UserProfile | null = null;
+    let allPhotos: CommunityPhoto[] = [];
+
+    // Récupérer l'utilisateur
+    photoStore.getCurrentUser().then((u) => (currentUser = u));
+    window.addEventListener('mvett:auth-changed', ((e: CustomEvent) => {
+      currentUser = e.detail;
+      renderPhotos();
+    }) as EventListener);
+
+    async function loadPhotos() {
+      allPhotos = await photoStore.getPhotos();
+      renderPhotos();
+    }
+
+    function renderPhotos() {
+      if (!grid || !emptyState) return;
+
+      const filtered = currentFilter === 'all'
+        ? allPhotos
+        : allPhotos.filter((p) => p.province_id === currentFilter);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        emptyState.style.display = 'flex';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      grid.innerHTML = filtered.map((photo) => {
+        const prov = provinces.find((p) => p.id === photo.province_id);
+        const provName = prov ? `${prov.code} · ${prov.name}` : photo.province_id;
+        const isAuthor = currentUser && (currentUser.id === photo.user_id);
+        const dateStr = new Date(photo.created_at).toLocaleDateString('fr-FR', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+
+        return `
+          <article class="photo-card" data-photo-id="${photo.id}" style="--bg-accent: ${photo.background_color};">
+            <div class="card-media">
+              <img src="${photo.image_url}" alt="${photo.title}" loading="lazy" />
+              <div class="card-overlay">
+                <button type="button" class="btn-view-3d" data-photo-id="${photo.id}">
+                  Voir en 3D ↗
+                </button>
+              </div>
+              <span class="card-badge">${provName}</span>
+            </div>
+
+            <div class="card-info">
+              <h4 class="card-title">${photo.title}</h4>
+              <p class="card-location">${photo.location}</p>
+              ${photo.caption ? `<p class="card-caption">« ${photo.caption} »</p>` : ''}
+              
+              <div class="card-footer">
+                <div class="author-info">
+                  ${photo.user_avatar ? `<img src="${photo.user_avatar}" class="author-avatar" alt="" />` : `<span class="author-avatar-placeholder">${photo.user_name.charAt(0).toUpperCase()}</span>`}
+                  <span class="author-name">${photo.user_name}</span>
+                </div>
+                <div class="footer-meta">
+                  <span class="card-date">${dateStr}</span>
+                  ${isAuthor ? `<button type="button" class="btn-delete-photo" data-delete-id="${photo.id}" title="Supprimer ma photo">🗑</button>` : ''}
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      // Attacher les clics sur les boutons de la carte
+      grid.querySelectorAll('.btn-view-3d').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-photo-id');
+          if (pId) {
+            closeModal();
+            window.dispatchEvent(new CustomEvent('mvett:jump-to-slide', { detail: { photoId: pId } }));
+          }
+        });
+      });
+
+      grid.querySelectorAll('.btn-delete-photo').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-delete-id');
+          if (pId && confirm('Êtes-vous sûr de vouloir supprimer cette photographie du patrimoine ?')) {
+            await photoStore.deletePhoto(pId);
+            await loadPhotos();
+          }
+        });
+      });
+    }
+
+    function openModal(defaultProvinceId?: string) {
+      if (!backdrop) return;
+      if (defaultProvinceId) {
+        currentFilter = defaultProvinceId;
+        filterChips.forEach((btn) => {
+          const p = btn.getAttribute('data-province');
+          btn.classList.toggle('active', p === defaultProvinceId);
+        });
+      }
+      backdrop.classList.add('open');
+      backdrop.setAttribute('aria-hidden', 'false');
+      loadPhotos();
+    }
+
+    function closeModal() {
+      if (!backdrop) return;
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    // Gestion des filtres
+    filterChips.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        filterChips.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.getAttribute('data-province') || 'all';
+        renderPhotos();
+      });
+    });
+
+    // Événements
+    window.addEventListener('mvett:open-gallery', ((e: CustomEvent) => {
+      openModal(e.detail?.provinceId);
+    }) as EventListener);
+
+    window.addEventListener('mvett:photos-updated', () => {
+      loadPhotos();
+    });
+
+    closeBtn?.addEventListener('click', closeModal);
+    backdrop?.addEventListener('click', (e) => {
+      if (e.target === backdrop) closeModal();
+    });
+
+    btnDrawerUpload?.addEventListener('click', () => {
+      closeModal();
+      if (currentUser) {
+        window.dispatchEvent(new CustomEvent('mvett:open-upload', { detail: { provinceId: currentFilter !== 'all' ? currentFilter : undefined } }));
+      } else {
+        window.dispatchEvent(new CustomEvent('mvett:open-auth'));
+      }
+    });
+
+    btnEmptyUpload?.addEventListener('click', () => {
+      closeModal();
+      if (currentUser) {
+        window.dispatchEvent(new CustomEvent('mvett:open-upload', { detail: { provinceId: currentFilter !== 'all' ? currentFilter : undefined } }));
+      } else {
+        window.dispatchEvent(new CustomEvent('mvett:open-auth'));
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && backdrop?.classList.contains('open')) {
+        closeModal();
+      }
+    });
+  });
+</script>
+
+<style>
+  .gallery-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(8, 10, 9, 0.75);
+    backdrop-filter: blur(32px) saturate(160%);
+    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    z-index: 110;
+    display: flex;
+    justify-content: flex-end;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s ease;
+  }
+
+  .gallery-drawer-backdrop.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .gallery-drawer {
+    width: 100%;
+    max-width: 780px;
+    height: 100%;
+    background: rgba(16, 20, 19, 0.94);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    color: #ffffff;
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gallery-drawer-backdrop.open .gallery-drawer {
+    transform: translateX(0);
+  }
+
+  .gallery-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 2.2rem 2.4rem 1.4rem 2.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .gallery-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 0.22rem 0.6rem;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    display: inline-block;
+    margin-bottom: 0.6rem;
+  }
+
+  .gallery-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.1;
+    margin-bottom: 0.3rem;
+  }
+
+  .gallery-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .btn-drawer-upload {
+    background: #ffffff;
+    color: #121615;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+  }
+
+  .btn-drawer-upload:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+  }
+
+  .drawer-close-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 50%;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .drawer-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .province-filter-bar {
+    display: flex;
+    gap: 0.55rem;
+    padding: 1rem 2.4rem;
+    overflow-x: auto;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    scrollbar-width: none;
+  }
+
+  .province-filter-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-chip {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.75);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .filter-chip:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+  }
+
+  .filter-chip.active {
+    background: #ffffff;
+    color: #121615;
+    border-color: #ffffff;
+    font-weight: 600;
+  }
+
+  .gallery-grid-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem 2.4rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.6rem;
+  }
+
+  .photo-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .photo-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .card-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #0d1110;
+  }
+
+  .card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  .photo-card:hover .card-media img {
+    transform: scale(1.05);
+  }
+
+  .card-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.25s ease;
+  }
+
+  .photo-card:hover .card-overlay {
+    opacity: 1;
+  }
+
+  .btn-view-3d {
+    background: #ffffff;
+    color: #121615;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s ease;
+  }
+
+  .btn-view-3d:hover {
+    transform: scale(1.06);
+  }
+
+  .card-badge {
+    position: absolute;
+    bottom: 0.6rem;
+    left: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .card-info {
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .card-title {
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #ffffff;
+  }
+
+  .card-location {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.6rem;
+  }
+
+  .card-caption {
+    font-style: italic;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.85rem;
+  }
+
+  .card-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .author-info {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .author-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+  }
+
+  .author-avatar-placeholder {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: bold;
+  }
+
+  .author-name {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .footer-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card-date {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .btn-delete-photo {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.82rem;
+    opacity: 0.6;
+    padding: 0.2rem;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .btn-delete-photo:hover {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  .gallery-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 1.5rem;
+  }
+
+  .empty-icon {
+    font-size: 2.8rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+
+  .empty-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .empty-desc {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.6);
+    max-width: 360px;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn-empty-upload {
+    background: #ffffff;
+    color: #121615;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.65rem 1.4rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-empty-upload:hover {
+    background: #e2e8f0;
+  }
+
+  @media (max-width: 768px) {
+    .gallery-drawer-header,
+    .province-filter-bar,
+    .gallery-grid-container {
+      padding-left: 1.4rem;
+      padding-right: 1.4rem;
+    }
+  }
+</style>

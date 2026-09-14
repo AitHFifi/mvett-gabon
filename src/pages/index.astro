@@ -1,0 +1,44 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Slideshow from '../components/Slideshow.astro';
+import Hud from '../components/Hud.astro';
+import FooterTicker from '../components/FooterTicker.astro';
+import InfoOverlay from '../components/InfoOverlay.astro';
+import AuthModal from '../components/AuthModal.astro';
+import UploadModal from '../components/UploadModal.astro';
+import CommunityGalleryModal from '../components/CommunityGalleryModal.astro';
+---
+
+<Layout title="MVETT — Les 9 Provinces du Gabon">
+  <main class="portfolio-main">
+    <!-- WebGL Fullscreen Canvas Layer -->
+    <Slideshow />
+
+    <!-- Minimalist HUD Controls & Status -->
+    <Hud />
+
+    <!-- Horizontal 9-Provinces Footer Ticker (Smörgåsbord Style) -->
+    <FooterTicker />
+
+    <!-- Frosted Glass Information Slide-Over -->
+    <InfoOverlay />
+
+    <!-- Modale de connexion 1-clic / Magic Link -->
+    <AuthModal />
+
+    <!-- Modale de téléversement de photographies par province -->
+    <UploadModal />
+
+    <!-- Tiroir latéral de la Galerie Communautaire -->
+    <CommunityGalleryModal />
+  </main>
+</Layout>
+
+<style>
+  .portfolio-main {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+</style>
