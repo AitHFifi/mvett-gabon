@@ -99,6 +99,8 @@
 
     function updateUserUI(user: UserProfile | null) {
       currentUser = user;
+      const isAdmin = user ? (photoStore.isAdmin(user) || user.isDemo) : false;
+
       if (user) {
         if (userPill) userPill.style.display = 'inline-flex';
         if (userName) userName.textContent = user.name;
@@ -111,11 +113,16 @@
           }
         }
         if (btnAdmin) {
-          btnAdmin.style.display = (photoStore.isAdmin(user) || user.isDemo) ? 'inline-flex' : 'none';
+          btnAdmin.style.display = isAdmin ? 'inline-flex' : 'none';
+        }
+        // Masquer le bouton de contribution pour l'administrateur / curateur
+        if (btnUpload) {
+          btnUpload.style.display = isAdmin ? 'none' : 'inline-flex';
         }
       } else {
         if (userPill) userPill.style.display = 'none';
         if (btnAdmin) btnAdmin.style.display = 'none';
+        if (btnUpload) btnUpload.style.display = 'inline-flex';
       }
     }
 
@@ -134,6 +141,10 @@
     btnUpload?.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
+      if (currentUser && (photoStore.isAdmin(currentUser) || currentUser.isDemo)) {
+        window.location.href = '/admin';
+        return;
+      }
       if (currentUser) {
         window.dispatchEvent(new CustomEvent('mvett:open-upload', { detail: { provinceId: currentProvinceId } }));
       } else {

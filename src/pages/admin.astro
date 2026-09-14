@@ -36,10 +36,10 @@ import { provinces } from '../data/provinces';
     <!-- Écran de verrouillage / Connexion si non-admin -->
     <section class="admin-auth-gate" id="adminAuthGate" style="display: none;">
       <div class="gate-card">
-        <div class="gate-badge">Accès Restreint</div>
+        <div class="gate-badge">Accès Réservé</div>
         <h1 class="gate-title">Espace Curation du Patrimoine</h1>
         <p class="gate-desc">
-          Cet espace permet de valider les photographies citoyennes avant leur intégration dans le grand diaporama officiel des 9 provinces.
+          Cet espace permet d'examiner et de valider les photographies citoyennes avant leur diffusion officielle dans le grand diaporama 3D des 9 provinces du Gabon.
         </p>
 
         <div class="gate-actions">
@@ -126,7 +126,7 @@ import { provinces } from '../data/provinces';
         </div>
       </section>
 
-      <!-- Grille des photographies soumises -->
+      <!-- Grille des photographies soumises (Taille maîtrisée, pas d'étirement géant) -->
       <section class="submissions-grid" id="submissionsGrid">
         <!-- Rempli dynamiquement en JS -->
       </section>
@@ -139,6 +139,117 @@ import { provinces } from '../data/provinces';
       </div>
 
     </main>
+
+    <!-- Modale Studio de Prévisualisation Multi-Écrans (Laptop 16:9 vs Smartphone 9:16) -->
+    <div class="preview-modal-backdrop" id="previewModalBackdrop" aria-hidden="true">
+      <div class="preview-modal-container" role="dialog" aria-modal="true" aria-labelledby="previewModalTitle">
+        
+        <!-- Header du studio -->
+        <header class="preview-modal-header">
+          <div class="preview-header-info">
+            <div class="preview-badge-row">
+              <span class="preview-badge-province" id="previewModalProvince">G1 · Estuaire</span>
+              <span class="preview-badge-ratio" id="previewModalRatio">Format : Inconnu</span>
+              <span class="preview-badge-status" id="previewModalStatus">En attente</span>
+            </div>
+            <h2 class="preview-modal-title" id="previewModalTitle">Titre de l'œuvre</h2>
+            <p class="preview-modal-location" id="previewModalLocation">Lieu · Auteur</p>
+          </div>
+
+          <!-- Switcher d'Écrans Interactif -->
+          <div class="device-switcher" role="tablist">
+            <button type="button" class="device-btn active" data-device="laptop" id="btnDeviceLaptop">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              <span>💻 Laptop (16:9)</span>
+            </button>
+            <button type="button" class="device-btn" data-device="mobile" id="btnDeviceMobile">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+              </svg>
+              <span>📱 Smartphone (9:16)</span>
+            </button>
+          </div>
+
+          <button type="button" class="btn-close-modal" id="btnClosePreviewModal" aria-label="Fermer le studio">✕</button>
+        </header>
+
+        <!-- Stage de Rendu & Simulation -->
+        <div class="preview-stage-viewport">
+          
+          <!-- Mode Laptop (16:9) -->
+          <div class="screen-frame-laptop" id="frameLaptop">
+            <div class="laptop-bezel">
+              <div class="laptop-display" id="laptopDisplay">
+                <!-- Arrière-plan flouté cinématique (pour photos portrait) -->
+                <div class="laptop-bg-blur" id="laptopBgBlur"></div>
+                <!-- Image Principale centrée -->
+                <div class="laptop-image-holder" id="laptopImageHolder">
+                  <img src="" id="laptopMainImg" alt="Prévisualisation Laptop" />
+                </div>
+                <!-- Mockup de HUD Dépoli sur l'écran -->
+                <div class="hud-mock-overlay">
+                  <div class="hud-mock-top">
+                    <span class="mock-brand">MVETT</span>
+                    <span class="mock-counter" id="laptopMockCounter">01 / 03 · G1 ESTUAIRE</span>
+                  </div>
+                  <div class="hud-mock-bottom">
+                    <h4 class="mock-title" id="laptopMockTitle">Titre de l'œuvre</h4>
+                    <p class="mock-loc" id="laptopMockLoc">Lieu précis</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="laptop-keyboard-base"></div>
+          </div>
+
+          <!-- Mode Smartphone (9:16) -->
+          <div class="screen-frame-mobile" id="frameMobile" style="display: none;">
+            <div class="mobile-case">
+              <div class="mobile-notch"></div>
+              <div class="mobile-display" id="mobileDisplay">
+                <img src="" id="mobileMainImg" alt="Prévisualisation Mobile" />
+                <!-- Mockup HUD Mobile -->
+                <div class="hud-mock-overlay mobile">
+                  <div class="hud-mock-top">
+                    <span class="mock-brand">MVETT</span>
+                  </div>
+                  <div class="hud-mock-bottom">
+                    <h4 class="mock-title" id="mobileMockTitle">Titre</h4>
+                    <p class="mock-loc" id="mobileMockLoc">Lieu précis</p>
+                  </div>
+                </div>
+              </div>
+              <div class="mobile-home-bar"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Toolbar d'Actions de Modération -->
+        <footer class="preview-modal-footer">
+          <div class="footer-info">
+            <p class="footer-tip" id="previewFormatTip">
+              ℹ️ Ce cliché s'adaptera automatiquement selon l'appareil du visiteur.
+            </p>
+          </div>
+
+          <div class="footer-buttons">
+            <button type="button" class="btn-modal-action-reject" id="btnModalReject">
+              ✕ Rejeter la photo
+            </button>
+            <button type="button" class="btn-modal-action-approve" id="btnModalApprove">
+              ✓ Approuver pour le Diaporama 3D
+            </button>
+          </div>
+        </footer>
+
+      </div>
+    </div>
 
   </div>
 </Layout>
@@ -168,12 +279,38 @@ import { provinces } from '../data/provinces';
     const grid = document.getElementById('submissionsGrid');
     const emptyState = document.getElementById('adminEmptyState');
 
+    // Éléments du Studio de Prévisualisation Modal
+    const previewBackdrop = document.getElementById('previewModalBackdrop');
+    const btnClosePreview = document.getElementById('btnClosePreviewModal');
+    const previewModalProvince = document.getElementById('previewModalProvince');
+    const previewModalRatio = document.getElementById('previewModalRatio');
+    const previewModalStatus = document.getElementById('previewModalStatus');
+    const previewModalTitle = document.getElementById('previewModalTitle');
+    const previewModalLocation = document.getElementById('previewModalLocation');
+    const btnDeviceLaptop = document.getElementById('btnDeviceLaptop');
+    const btnDeviceMobile = document.getElementById('btnDeviceMobile');
+    const frameLaptop = document.getElementById('frameLaptop');
+    const frameMobile = document.getElementById('frameMobile');
+    const laptopMainImg = document.getElementById('laptopMainImg') as HTMLImageElement | null;
+    const laptopBgBlur = document.getElementById('laptopBgBlur') as HTMLElement | null;
+    const laptopImageHolder = document.getElementById('laptopImageHolder');
+    const laptopMockCounter = document.getElementById('laptopMockCounter');
+    const laptopMockTitle = document.getElementById('laptopMockTitle');
+    const laptopMockLoc = document.getElementById('laptopMockLoc');
+    const mobileMainImg = document.getElementById('mobileMainImg') as HTMLImageElement | null;
+    const mobileMockTitle = document.getElementById('mobileMockTitle');
+    const mobileMockLoc = document.getElementById('mobileMockLoc');
+    const previewFormatTip = document.getElementById('previewFormatTip');
+    const btnModalApprove = document.getElementById('btnModalApprove') as HTMLButtonElement | null;
+    const btnModalReject = document.getElementById('btnModalReject') as HTMLButtonElement | null;
+
     let currentStatusFilter: 'pending' | 'approved' | 'all' = 'pending';
     let currentProvinceFilter: string = 'all';
     let currentUser: UserProfile | null = null;
     let allPhotos: CommunityPhoto[] = [];
+    let currentPreviewPhoto: CommunityPhoto | null = null;
 
-    // Vérification de la session & droits
+    // Vérification session & droits
     async function checkAuth() {
       currentUser = await photoStore.getCurrentUser();
       renderAuthUI();
@@ -247,8 +384,6 @@ import { provinces } from '../data/provinces';
           day: 'numeric',
           month: 'short',
           year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
         });
 
         const isApproved = photo.status === 'approved';
@@ -256,12 +391,15 @@ import { provinces } from '../data/provinces';
 
         return `
           <article class="submission-card ${photo.status}" data-photo-id="${photo.id}">
-            <div class="card-thumb">
-              <img src="${photo.image_url}" alt="${photo.title}" loading="lazy" />
+            <div class="card-thumb" data-preview-id="${photo.id}" title="Cliquer pour prévisualiser (Laptop & Mobile)">
+              <img src="${photo.image_url}" alt="${photo.title}" loading="lazy" class="thumb-img" />
               <div class="card-status-badge ${photo.status}">
-                ${isApproved ? '✓ Approuvée (3D En Ligne)' : isPending ? '⏳ En Attente' : '✕ Rejetée'}
+                ${isApproved ? '✓ Approuvée' : isPending ? '⏳ En Attente' : '✕ Rejetée'}
               </div>
               <span class="card-province-badge">${provName}</span>
+              <div class="thumb-overlay-hint">
+                <span>👁 Prévisualiser</span>
+              </div>
             </div>
 
             <div class="card-body">
@@ -280,14 +418,23 @@ import { provinces } from '../data/provinces';
                 </div>
               </div>
 
+              <!-- Bouton Prévisualisation Multi-Écrans -->
+              <button type="button" class="btn-card-preview" data-preview-id="${photo.id}">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Tester Laptop & Mobile</span>
+              </button>
+
               <div class="card-actions">
                 ${!isApproved ? `
                   <button type="button" class="btn-action-approve" data-approve-id="${photo.id}">
-                    ✓ Approuver pour le Diaporama 3D
+                    ✓ Approuver
                   </button>
                 ` : `
                   <a href="/?photo=${photo.id}" class="btn-action-view" target="_blank">
-                    👁 Voir dans le Diaporama ↗
+                    👁 Diaporama ↗
                   </a>
                 `}
 
@@ -300,13 +447,25 @@ import { provinces } from '../data/provinces';
         `;
       }).join('');
 
-      // Attacher les clics d'approbation et de rejet
+      // Attacher les clics d'ouverture du Studio de Prévisualisation
+      grid.querySelectorAll('[data-preview-id]').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pId = (el as HTMLElement).getAttribute('data-preview-id');
+          if (pId) {
+            const photo = allPhotos.find((p) => p.id === pId);
+            if (photo) openPreviewModal(photo);
+          }
+        });
+      });
+
+      // Attacher les clics d'approbation et de rejet directs
       grid.querySelectorAll('.btn-action-approve').forEach((btn) => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const pId = (btn as HTMLElement).getAttribute('data-approve-id');
           if (pId) {
-            btn.textContent = 'Approbation en cours...';
+            btn.textContent = 'Approbation...';
             (btn as HTMLButtonElement).disabled = true;
             await photoStore.approvePhoto(pId);
             await loadPhotos();
@@ -318,13 +477,145 @@ import { provinces } from '../data/provinces';
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
           const pId = (btn as HTMLElement).getAttribute('data-reject-id');
-          if (pId && confirm('Voulez-vous retirer cette photographie de la plateforme ?')) {
+          if (pId && confirm('Voulez-vous rejeter cette photographie ?')) {
             await photoStore.rejectPhoto(pId);
             await loadPhotos();
           }
         });
       });
     }
+
+    // ========================================================
+    // STUDIO DE PRÉVISUALISATION MULTI-ÉCRANS
+    // ========================================================
+
+    function openPreviewModal(photo: CommunityPhoto) {
+      if (!previewBackdrop) return;
+      currentPreviewPhoto = photo;
+
+      const prov = provinces.find((p) => p.id === photo.province_id);
+      const provName = prov ? `${prov.code} · ${prov.name}` : photo.province_id;
+
+      if (previewModalProvince) previewModalProvince.textContent = provName;
+      if (previewModalTitle) previewModalTitle.textContent = photo.title;
+      if (previewModalLocation) previewModalLocation.textContent = `${photo.location} — par ${photo.user_name}`;
+      
+      if (previewModalStatus) {
+        previewModalStatus.textContent = photo.status === 'approved' ? '✓ Diffusée en 3D' : '⏳ En attente';
+        previewModalStatus.className = `preview-badge-status ${photo.status}`;
+      }
+
+      // Configuration Laptop Mock
+      if (laptopMainImg) laptopMainImg.src = photo.image_url;
+      if (laptopBgBlur) laptopBgBlur.style.backgroundImage = `url("${photo.image_url}")`;
+      if (laptopMockCounter) laptopMockCounter.textContent = `01 / 03 · ${prov ? prov.code : 'G1'} ${(prov ? prov.name : 'GABON').toUpperCase()}`;
+      if (laptopMockTitle) laptopMockTitle.textContent = photo.title;
+      if (laptopMockLoc) laptopMockLoc.textContent = photo.location;
+
+      // Configuration Mobile Mock
+      if (mobileMainImg) mobileMainImg.src = photo.image_url;
+      if (mobileMockTitle) mobileMockTitle.textContent = photo.title;
+      if (mobileMockLoc) mobileMockLoc.textContent = photo.location;
+
+      // Bouton actions modale
+      if (btnModalApprove) {
+        btnModalApprove.style.display = photo.status === 'approved' ? 'none' : 'inline-flex';
+      }
+      if (btnModalReject) {
+        btnModalReject.textContent = photo.status === 'approved' ? 'Retirer du Diaporama' : '✕ Rejeter la photo';
+      }
+
+      // Déterminer le format d'image (16:9 vs 9:16)
+      const img = new Image();
+      img.src = photo.image_url;
+      img.onload = () => {
+        const aspect = img.naturalWidth / img.naturalHeight;
+        const isPortrait = aspect < 0.95;
+
+        if (previewModalRatio) {
+          previewModalRatio.textContent = isPortrait ? '📱 Format : 9:16 Portrait' : '💻 Format : 16:9 Paysage';
+        }
+
+        if (previewFormatTip) {
+          if (isPortrait) {
+            previewFormatTip.innerHTML = '✨ <strong>Photo Verticale (9:16)</strong> : Le shader la centre avec élégance et ajoute un <em>flou bokeh sombre</em> sur les côtés en vue Laptop.';
+          } else {
+            previewFormatTip.innerHTML = '✨ <strong>Photo Horizontale (16:9)</strong> : Remplissage parfait de l’écran sur Laptop, centrée sur Smartphone.';
+          }
+        }
+
+        // Adapter le conteneur laptop : si portrait, ajouter la classe portrait pour le flou d'arrière-plan
+        if (laptopImageHolder && laptopBgBlur) {
+          if (isPortrait) {
+            laptopImageHolder.classList.add('portrait-framed');
+            laptopBgBlur.style.display = 'block';
+          } else {
+            laptopImageHolder.classList.remove('portrait-framed');
+            laptopBgBlur.style.display = 'none';
+          }
+        }
+      };
+
+      // Mode Laptop par défaut
+      setDeviceView('laptop');
+
+      previewBackdrop.classList.add('open');
+      previewBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closePreviewModal() {
+      if (!previewBackdrop) return;
+      previewBackdrop.classList.remove('open');
+      previewBackdrop.setAttribute('aria-hidden', 'true');
+      currentPreviewPhoto = null;
+    }
+
+    function setDeviceView(device: 'laptop' | 'mobile') {
+      if (device === 'laptop') {
+        btnDeviceLaptop?.classList.add('active');
+        btnDeviceMobile?.classList.remove('active');
+        if (frameLaptop) frameLaptop.style.display = 'flex';
+        if (frameMobile) frameMobile.style.display = 'none';
+      } else {
+        btnDeviceLaptop?.classList.remove('active');
+        btnDeviceMobile?.classList.add('active');
+        if (frameLaptop) frameLaptop.style.display = 'none';
+        if (frameMobile) frameMobile.style.display = 'flex';
+      }
+    }
+
+    btnDeviceLaptop?.addEventListener('click', () => setDeviceView('laptop'));
+    btnDeviceMobile?.addEventListener('click', () => setDeviceView('mobile'));
+    btnClosePreview?.addEventListener('click', closePreviewModal);
+
+    previewBackdrop?.addEventListener('click', (e) => {
+      if (e.target === previewBackdrop) closePreviewModal();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && previewBackdrop?.classList.contains('open')) {
+        closePreviewModal();
+      }
+    });
+
+    // Actions depuis la modale
+    btnModalApprove?.addEventListener('click', async () => {
+      if (currentPreviewPhoto) {
+        btnModalApprove.textContent = 'Approbation...';
+        btnModalApprove.disabled = true;
+        await photoStore.approvePhoto(currentPreviewPhoto.id);
+        closePreviewModal();
+        await loadPhotos();
+      }
+    });
+
+    btnModalReject?.addEventListener('click', async () => {
+      if (currentPreviewPhoto && confirm('Voulez-vous retirer cette photographie ?')) {
+        await photoStore.rejectPhoto(currentPreviewPhoto.id);
+        closePreviewModal();
+        await loadPhotos();
+      }
+    });
 
     // Gestion des onglets de statut
     statusTabs.forEach((tab) => {
@@ -384,7 +675,7 @@ import { provinces } from '../data/provinces';
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.4rem 3rem;
+    padding: 1.2rem 3rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(16, 20, 19, 0.85);
     backdrop-filter: blur(20px);
@@ -423,7 +714,7 @@ import { provinces } from '../data/provinces';
   .header-right {
     display: flex;
     align-items: center;
-    gap: 1.2rem;
+    gap: 1rem;
   }
 
   .btn-back-home {
@@ -573,15 +864,15 @@ import { provinces } from '../data/provinces';
     max-width: 1400px;
     width: 100%;
     margin: 0 auto;
-    padding: 2.5rem 3rem 5rem 3rem;
+    padding: 2.2rem 3rem 5rem 3rem;
   }
 
   /* KPI Cards */
   .kpi-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2.5rem;
+    gap: 1.4rem;
+    margin-bottom: 2.2rem;
   }
 
   .kpi-card {
@@ -699,26 +990,30 @@ import { provinces } from '../data/provinces';
     color: #ffffff;
   }
 
-  /* Submissions Grid */
+  /* Submissions Grid — Compacte, max 360px par carte */
   .submissions-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 360px));
+    justify-content: start;
     gap: 1.8rem;
   }
 
   .submission-card {
+    max-width: 360px;
+    width: 100%;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
   .submission-card:hover {
     border-color: rgba(255, 255, 255, 0.25);
     transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   }
 
   .submission-card.pending {
@@ -735,12 +1030,43 @@ import { provinces } from '../data/provinces';
     aspect-ratio: 16 / 10;
     overflow: hidden;
     background: #000000;
+    cursor: pointer;
   }
 
   .card-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .card-thumb:hover img {
+    transform: scale(1.04);
+  }
+
+  .thumb-overlay-hint {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .thumb-overlay-hint span {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #ffffff;
+    color: #121615;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+  }
+
+  .card-thumb:hover .thumb-overlay-hint {
+    opacity: 1;
   }
 
   .card-status-badge {
@@ -753,15 +1079,16 @@ import { provinces } from '../data/provinces';
     padding: 0.22rem 0.6rem;
     border-radius: 999px;
     backdrop-filter: blur(8px);
+    z-index: 2;
   }
 
   .card-status-badge.pending {
-    background: rgba(234, 179, 8, 0.85);
+    background: rgba(234, 179, 8, 0.88);
     color: #000000;
   }
 
   .card-status-badge.approved {
-    background: rgba(34, 197, 94, 0.85);
+    background: rgba(34, 197, 94, 0.88);
     color: #000000;
   }
 
@@ -770,17 +1097,18 @@ import { provinces } from '../data/provinces';
     bottom: 0.75rem;
     left: 0.75rem;
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 600;
     padding: 0.2rem 0.55rem;
     border-radius: 4px;
     background: rgba(0, 0, 0, 0.75);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #ffffff;
+    z-index: 2;
   }
 
   .card-body {
-    padding: 1.4rem;
+    padding: 1.2rem;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -788,26 +1116,26 @@ import { provinces } from '../data/provinces';
 
   .card-title {
     font-family: var(--font-mono);
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 600;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.2rem;
   }
 
   .card-location {
     font-family: var(--font-mono);
-    font-size: 0.76rem;
+    font-size: 0.74rem;
     color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.7rem;
   }
 
   .card-caption {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-style: italic;
     color: rgba(255, 255, 255, 0.8);
     line-height: 1.45;
-    margin-bottom: 1.2rem;
+    margin-bottom: 1rem;
   }
 
   .card-caption.empty {
@@ -820,27 +1148,27 @@ import { provinces } from '../data/provinces';
     align-items: center;
     gap: 0.6rem;
     margin-top: auto;
-    padding-top: 0.9rem;
+    padding-top: 0.8rem;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
-    margin-bottom: 1.2rem;
+    margin-bottom: 0.9rem;
   }
 
   .contributor-avatar {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
   }
 
   .contributor-initial {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: bold;
   }
 
@@ -851,19 +1179,43 @@ import { provinces } from '../data/provinces';
 
   .contributor-name {
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 600;
   }
 
   .submission-date {
     font-family: var(--font-mono);
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     color: rgba(255, 255, 255, 0.45);
+  }
+
+  .btn-card-preview {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    padding: 0.55rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 0.6rem;
+    transition: all 0.2s ease;
+  }
+
+  .btn-card-preview:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.4);
   }
 
   .card-actions {
     display: flex;
-    gap: 0.6rem;
+    gap: 0.55rem;
   }
 
   .btn-action-approve {
@@ -871,10 +1223,10 @@ import { provinces } from '../data/provinces';
     background: #22c55e;
     color: #062e14;
     border: none;
-    padding: 0.6rem 0.8rem;
+    padding: 0.55rem 0.75rem;
     border-radius: 8px;
     font-family: var(--font-mono);
-    font-size: 0.76rem;
+    font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s ease, transform 0.1s ease;
@@ -893,10 +1245,10 @@ import { provinces } from '../data/provinces';
     background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.6rem 0.8rem;
+    padding: 0.55rem 0.75rem;
     border-radius: 8px;
     font-family: var(--font-mono);
-    font-size: 0.76rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-decoration: none;
     transition: background 0.15s ease;
@@ -910,10 +1262,10 @@ import { provinces } from '../data/provinces';
     background: rgba(239, 68, 68, 0.15);
     color: #fca5a5;
     border: 1px solid rgba(239, 68, 68, 0.3);
-    padding: 0.6rem 0.8rem;
+    padding: 0.55rem 0.75rem;
     border-radius: 8px;
     font-family: var(--font-mono);
-    font-size: 0.76rem;
+    font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.15s ease;
   }
@@ -953,6 +1305,430 @@ import { provinces } from '../data/provinces';
     max-width: 400px;
   }
 
+  /* ========================================================
+     MODALE DU STUDIO DE PRÉVISUALISATION (MULTI-ÉCRANS)
+     ======================================================== */
+  .preview-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(6, 8, 7, 0.85);
+    backdrop-filter: blur(30px);
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .preview-modal-backdrop.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .preview-modal-container {
+    width: 100%;
+    max-width: 1050px;
+    max-height: 94vh;
+    background: rgba(18, 22, 21, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.97);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .preview-modal-backdrop.open .preview-modal-container {
+    transform: scale(1);
+  }
+
+  .preview-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.4rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(14, 18, 17, 0.6);
+  }
+
+  .preview-badge-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .preview-badge-province {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .preview-badge-ratio {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.18);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: #93c5fd;
+  }
+
+  .preview-badge-status {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+  }
+
+  .preview-badge-status.pending {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fde047;
+  }
+
+  .preview-badge-status.approved {
+    background: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+  }
+
+  .preview-modal-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 0.15rem;
+  }
+
+  .preview-modal-location {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .device-switcher {
+    display: flex;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 0.25rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .device-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.65);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 500;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.2s ease;
+  }
+
+  .device-btn.active {
+    background: #ffffff;
+    color: #0e1211;
+    font-weight: 600;
+  }
+
+  .btn-close-modal {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+  }
+
+  .btn-close-modal:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Stage Viewport */
+  .preview-stage-viewport {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 480px;
+    background: #080a09;
+  }
+
+  /* --- Laptop Simulation Frame (16:9) --- */
+  .screen-frame-laptop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 740px;
+  }
+
+  .laptop-bezel {
+    width: 100%;
+    aspect-ratio: 16 / 9.8;
+    background: #1b1f1e;
+    border: 2px solid #2a312f;
+    border-radius: 12px 12px 0 0;
+    padding: 10px 10px 14px 10px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .laptop-display {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #050706;
+  }
+
+  .laptop-bg-blur {
+    position: absolute;
+    inset: -20px;
+    background-size: cover;
+    background-position: center;
+    filter: blur(28px) brightness(0.35);
+    transform: scale(1.1);
+  }
+
+  .laptop-image-holder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+
+  .laptop-image-holder img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Si portrait, l'image reste centrée avec son cadre élégant */
+  .laptop-image-holder.portrait-framed img {
+    width: auto;
+    height: 90%;
+    aspect-ratio: 9 / 16;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .laptop-keyboard-base {
+    width: 110%;
+    height: 14px;
+    background: #252b29;
+    border-radius: 0 0 16px 16px;
+    border-top: 2px solid #363e3b;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  }
+
+  /* --- Smartphone Simulation Frame (9:16) --- */
+  .screen-frame-mobile {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
+
+  .mobile-case {
+    width: 270px;
+    height: 520px;
+    background: #171b19;
+    border: 3px solid #363d3a;
+    border-radius: 36px;
+    padding: 10px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-notch {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70px;
+    height: 16px;
+    background: #0d100f;
+    border-radius: 20px;
+    z-index: 10;
+  }
+
+  .mobile-display {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 26px;
+    overflow: hidden;
+    background: #000000;
+  }
+
+  .mobile-display img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .mobile-home-bar {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 999px;
+    z-index: 10;
+  }
+
+  /* Mockup HUD Overlay */
+  .hud-mock-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.2rem 1.4rem;
+  }
+
+  .hud-mock-overlay.mobile {
+    padding: 2.2rem 1rem 1.5rem 1rem;
+  }
+
+  .hud-mock-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .mock-brand {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  }
+
+  .mock-counter {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .mock-title {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+    margin-bottom: 0.15rem;
+  }
+
+  .mock-loc {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+  }
+
+  /* Modal Footer */
+  .preview-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem 2rem;
+    background: rgba(14, 18, 17, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .footer-tip {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .footer-tip em {
+    color: #fde047;
+    font-style: normal;
+  }
+
+  .footer-buttons {
+    display: flex;
+    gap: 0.8rem;
+  }
+
+  .btn-modal-action-approve {
+    background: #22c55e;
+    color: #062e14;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.65rem 1.3rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .btn-modal-action-approve:hover {
+    background: #16a34a;
+  }
+
+  .btn-modal-action-reject {
+    background: rgba(239, 68, 68, 0.16);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 0.65rem 1.1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-modal-action-reject:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #ffffff;
+  }
+
   @media (max-width: 768px) {
     .admin-header {
       padding: 1rem 1.2rem;
@@ -966,6 +1742,25 @@ import { provinces } from '../data/provinces';
     }
     .status-tabs {
       overflow-x: auto;
+    }
+    .submissions-grid {
+      grid-template-columns: 1fr;
+    }
+    .submission-card {
+      max-width: 100%;
+    }
+    .preview-modal-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .preview-modal-footer {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch;
+    }
+    .footer-buttons {
+      flex-direction: column-reverse;
     }
   }
 </style>

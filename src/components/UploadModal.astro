@@ -57,7 +57,22 @@ import { provinces } from '../data/provinces';
           <div class="image-preview" id="imagePreview" style="display: none;">
             <img id="previewImg" src="" alt="Aperçu du cliché" />
             <button type="button" class="remove-image-btn" id="removeImageBtn" title="Changer d'image">✕</button>
+            <div class="compression-overlay" id="compressionOverlay" style="display: none;">
+              <div class="compression-spinner"></div>
+              <span class="compression-overlay-text">Optimisation WebP haute fidélité...</span>
+            </div>
           </div>
+        </div>
+
+        <!-- Statistiques et gain d'optimisation -->
+        <div class="compression-stats" id="compressionStats" style="display: none;">
+          <div class="compression-badge">
+            <svg class="badge-icon" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            <span id="compressionBadgeText">12.5 Mo → 1.2 Mo (-90%)</span>
+          </div>
+          <span class="compression-fidelity-tag">WebP 2.5K · Détails & Rigueur préservés</span>
         </div>
       </div>
 
@@ -114,6 +129,7 @@ import { provinces } from '../data/provinces';
 
 <script>
   import { photoStore } from '../lib/photo-store';
+  import { compressImage, formatBytes } from '../lib/image-compressor';
 
   function initUploadModal() {
     const backdrop = document.getElementById('uploadModalBackdrop');
@@ -126,6 +142,9 @@ import { provinces } from '../data/provinces';
     const imagePreview = document.getElementById('imagePreview');
     const previewImg = document.getElementById('previewImg') as HTMLImageElement | null;
     const removeImgBtn = document.getElementById('removeImageBtn');
+    const compressionOverlay = document.getElementById('compressionOverlay');
+    const compressionStats = document.getElementById('compressionStats');
+    const compressionBadgeText = document.getElementById('compressionBadgeText');
     const provinceSelect = document.getElementById('provinceSelect') as HTMLSelectElement | null;
     const titleInput = document.getElementById('photoTitleInput') as HTMLInputElement | null;
     const locationInput = document.getElementById('photoLocationInput') as HTMLInputElement | null;
@@ -167,26 +186,55 @@ import { provinces } from '../data/provinces';
       if (previewImg) previewImg.src = '';
       if (imagePreview) imagePreview.style.display = 'none';
       if (dropzonePrompt) dropzonePrompt.style.display = 'flex';
+      if (compressionOverlay) compressionOverlay.style.display = 'none';
+      if (compressionStats) compressionStats.style.display = 'none';
       if (submitBtn) submitBtn.disabled = false;
-      if (btnText) btnText.style.display = 'inline';
+      if (btnText) {
+        btnText.style.display = 'inline';
+        btnText.textContent = 'Publier la photographie';
+      }
       if (btnSpinner) btnSpinner.style.display = 'none';
     }
 
-    function handleFile(file: File) {
+    async function handleFile(file: File) {
       if (!file.type.startsWith('image/')) {
         showFeedback('Veuillez sélectionner un fichier image valide (JPG, PNG, WEBP).', true);
         return;
       }
+
+      // 1. Aperçu instantané
       selectedFile = file;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (previewImg && e.target?.result) {
-          previewImg.src = e.target.result as string;
-          if (dropzonePrompt) dropzonePrompt.style.display = 'none';
-          if (imagePreview) imagePreview.style.display = 'block';
+      const initialPreviewUrl = URL.createObjectURL(file);
+      if (previewImg) previewImg.src = initialPreviewUrl;
+      if (dropzonePrompt) dropzonePrompt.style.display = 'none';
+      if (imagePreview) imagePreview.style.display = 'block';
+      if (compressionStats) compressionStats.style.display = 'none';
+
+      // 2. Afficher l'overlay d'optimisation
+      if (compressionOverlay) compressionOverlay.style.display = 'flex';
+      if (submitBtn) submitBtn.disabled = true;
+      if (btnText) btnText.textContent = 'Optimisation de la photo...';
+
+      try {
+        const result = await compressImage(file);
+        selectedFile = result.file;
+        if (previewImg) previewImg.src = result.previewUrl;
+
+        if (compressionBadgeText) {
+          if (!result.skipped && result.ratioPercent > 0) {
+            compressionBadgeText.textContent = `${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)} (-${result.ratioPercent}%)`;
+          } else {
+            compressionBadgeText.textContent = `${formatBytes(result.compressedSize)} · Déjà optimal`;
+          }
         }
-      };
-      reader.readAsDataURL(file);
+        if (compressionStats) compressionStats.style.display = 'flex';
+      } catch (err) {
+        console.warn('Erreur lors de l\'optimisation :', err);
+      } finally {
+        if (compressionOverlay) compressionOverlay.style.display = 'none';
+        if (submitBtn) submitBtn.disabled = false;
+        if (btnText) btnText.textContent = 'Publier la photographie';
+      }
     }
 
     // Événements d'ouverture
@@ -213,7 +261,11 @@ import { provinces } from '../data/provinces';
       if (fileInput) fileInput.value = '';
       if (previewImg) previewImg.src = '';
       if (imagePreview) imagePreview.style.display = 'none';
+      if (compressionOverlay) compressionOverlay.style.display = 'none';
+      if (compressionStats) compressionStats.style.display = 'none';
       if (dropzonePrompt) dropzonePrompt.style.display = 'flex';
+      if (submitBtn) submitBtn.disabled = false;
+      if (btnText) btnText.textContent = 'Publier la photographie';
     });
 
     // Drag & Drop
@@ -582,6 +634,78 @@ import { provinces } from '../data/provinces';
 
   .remove-image-btn:hover {
     background: rgba(220, 38, 38, 0.85);
+  }
+
+  .compression-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(14, 18, 16, 0.82);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    z-index: 4;
+    border-radius: 8px;
+  }
+
+  .compression-spinner {
+    width: 22px;
+    height: 22px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .compression-overlay-text {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.03em;
+  }
+
+  .compression-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.55rem;
+    padding: 0.55rem 0.85rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+  }
+
+  .compression-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4ade80;
+  }
+
+  .badge-icon {
+    flex-shrink: 0;
+    color: #4ade80;
+  }
+
+  .compression-fidelity-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .form-actions {

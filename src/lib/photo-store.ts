@@ -238,12 +238,13 @@ export class PhotoStore {
     // Si Supabase est configuré et non-démo
     if (isSupabaseConfigured() && supabase && !user.isDemo) {
       try {
-        const fileExt = params.file.name.split('.').pop() || 'jpg';
+        const fileExt = params.file.name.split('.').pop() || 'webp';
         const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('province-photos')
           .upload(fileName, params.file, {
+            contentType: params.file.type || 'image/webp',
             cacheControl: '3600',
             upsert: false,
           });
