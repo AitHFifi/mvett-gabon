@@ -222,7 +222,7 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
       if (document.querySelector('.upload-modal-backdrop.open')) return;
       if (document.querySelector('.gallery-drawer-backdrop.open')) return;
 
-      const threshold = window.innerWidth * 0.35;
+      const threshold = window.innerWidth * 0.5;
       if (e.clientX < threshold) {
         slider.prev();
       } else {
@@ -238,7 +238,7 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
       cursorPill.style.top = `${e.clientY - 30}px`;
       cursorPill.style.opacity = '1';
 
-      const threshold = window.innerWidth * 0.35;
+      const threshold = window.innerWidth * 0.5;
       if (e.clientX < threshold) {
         cursorPill.textContent = '← Prev';
       } else {
@@ -266,23 +266,6 @@ const initialBg = initialSlides[0]?.backgroundColor || '#1b2c34';
         slider.prev();
       }
     });
-
-    // Touch Swipe Detection
-    let touchStartX = 0;
-    window.addEventListener('touchstart', (e) => {
-      touchStartX = e.touches[0].clientX;
-    }, { passive: true });
-
-    window.addEventListener('touchend', (e) => {
-      if (infoOverlay?.classList.contains('open')) return;
-      const touchEndX = e.changedTouches[0].clientX;
-      const diff = touchStartX - touchEndX;
-
-      if (Math.abs(diff) > 45) {
-        if (diff > 0) slider.next();
-        else slider.prev();
-      }
-    }, { passive: true });
 
     // Info Overlay Open / Close
     function openInfo() {

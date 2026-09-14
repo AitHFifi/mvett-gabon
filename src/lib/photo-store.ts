@@ -1,5 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 
+export type PhotoStatus = 'pending' | 'approved' | 'rejected';
+
 export interface CommunityPhoto {
   id: string;
   user_id: string;
@@ -11,6 +13,8 @@ export interface CommunityPhoto {
   caption?: string;
   image_url: string;
   background_color: string;
+  status: PhotoStatus;
+  approved_at?: string;
   created_at: string;
 }
 
@@ -146,12 +150,30 @@ export class PhotoStore {
     window.dispatchEvent(new CustomEvent('mvett:auth-changed', { detail: null }));
   }
 
+  public isAdmin(user?: UserProfile | null): boolean {
+    if (!user) return false;
+    const adminEmails = ['alloghofrederic9@gmail.com', 'admin@mvett.ga'];
+    return !!(user.email && adminEmails.includes(user.email.toLowerCase()));
+  }
+
   // ==========================================
   // GESTION DES PHOTOS
   // ==========================================
 
-  public async getPhotos(provinceId?: string): Promise<CommunityPhoto[]> {
+  public async getPhotos(
+    options?: { provinceId?: string; status?: 'all' | PhotoStatus } | string
+  ): Promise<CommunityPhoto[]> {
     if (typeof window === 'undefined') return [];
+
+    let provinceId: string | undefined = undefined;
+    let targetStatus: 'all' | PhotoStatus = 'approved';
+
+    if (typeof options === 'string') {
+      provinceId = options;
+    } else if (options) {
+      provinceId = options.provinceId;
+      targetStatus = options.status ?? 'approved';
+    }
 
     let photos: CommunityPhoto[] = [];
 
@@ -160,9 +182,15 @@ export class PhotoStore {
       if (provinceId) {
         query = query.eq('province_id', provinceId);
       }
+      if (targetStatus !== 'all') {
+        query = query.eq('status', targetStatus);
+      }
       const { data, error } = await query;
       if (!error && data) {
-        photos = data as CommunityPhoto[];
+        photos = (data as any[]).map((p) => ({
+          ...p,
+          status: p.status || 'approved',
+        })) as CommunityPhoto[];
       }
     }
 
@@ -171,7 +199,12 @@ export class PhotoStore {
     const combined = [...photos, ...localPhotos];
 
     // Filtrer par province si demandé
-    const filtered = provinceId ? combined.filter((p) => p.province_id === provinceId) : combined;
+    let filtered = provinceId ? combined.filter((p) => p.province_id === provinceId) : combined;
+
+    // Filtrer par statut si demandé
+    if (targetStatus !== 'all') {
+      filtered = filtered.filter((p) => (p.status || 'approved') === targetStatus);
+    }
 
     // Dédupliquer par id
     const uniqueMap = new Map<string, CommunityPhoto>();
@@ -194,6 +227,8 @@ export class PhotoStore {
     if (!user) {
       return { error: 'Vous devez être connecté pour téléverser une photo.' };
     }
+
+    const initialStatus: PhotoStatus = this.isAdmin(user) ? 'approved' : 'pending';
 
     // Choisir une couleur de fond élégante
     const bgColor =
@@ -230,6 +265,7 @@ export class PhotoStore {
             caption: params.caption?.trim() || '',
             image_url: publicUrl,
             background_color: bgColor,
+            status: initialStatus,
           };
 
           const { data: insertData, error: insertError } = await supabase
@@ -264,12 +300,64 @@ export class PhotoStore {
       caption: params.caption?.trim() || '',
       image_url: dataUrl,
       background_color: bgColor,
+      status: initialStatus,
       created_at: new Date().toISOString(),
     };
 
     this.saveLocalPhoto(localPhoto);
     window.dispatchEvent(new CustomEvent('mvett:photos-updated', { detail: localPhoto }));
     return { photo: localPhoto };
+  }
+
+  public async approvePhoto(photoId: string): Promise<{ success: boolean; error?: string }> {
+    const user = await this.getCurrentUser();
+    if (!user) return { success: false, error: 'Non authentifié' };
+
+    if (isSupabaseConfigured() && supabase && !user.isDemo) {
+      const { error } = await supabase
+        .from('community_photos')
+        .update({ status: 'approved', approved_at: new Date().toISOString() })
+        .eq('id', photoId);
+
+      if (error) return { success: false, error: error.message };
+    }
+
+    // Mettre à jour localement
+    const locals = this.getLocalPhotos();
+    const target = locals.find((p) => p.id === photoId);
+    if (target) {
+      target.status = 'approved';
+      target.approved_at = new Date().toISOString();
+      localStorage.setItem(LOCAL_PHOTOS_KEY, JSON.stringify(locals));
+    }
+
+    window.dispatchEvent(new CustomEvent('mvett:photos-updated', { detail: { id: photoId, status: 'approved' } }));
+    return { success: true };
+  }
+
+  public async rejectPhoto(photoId: string): Promise<{ success: boolean; error?: string }> {
+    const user = await this.getCurrentUser();
+    if (!user) return { success: false, error: 'Non authentifié' };
+
+    if (isSupabaseConfigured() && supabase && !user.isDemo) {
+      const { error } = await supabase
+        .from('community_photos')
+        .update({ status: 'rejected' })
+        .eq('id', photoId);
+
+      if (error) return { success: false, error: error.message };
+    }
+
+    // Mettre à jour localement
+    const locals = this.getLocalPhotos();
+    const target = locals.find((p) => p.id === photoId);
+    if (target) {
+      target.status = 'rejected';
+      localStorage.setItem(LOCAL_PHOTOS_KEY, JSON.stringify(locals));
+    }
+
+    window.dispatchEvent(new CustomEvent('mvett:photos-updated', { detail: { id: photoId, status: 'rejected' } }));
+    return { success: true };
   }
 
   public async deletePhoto(photoId: string): Promise<{ success: boolean; error?: string }> {
@@ -281,8 +369,7 @@ export class PhotoStore {
       const { error } = await supabase
         .from('community_photos')
         .delete()
-        .eq('id', photoId)
-        .eq('user_id', user.id);
+        .eq('id', photoId);
 
       if (error) return { success: false, error: error.message };
     }

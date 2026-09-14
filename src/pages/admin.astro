@@ -1,0 +1,971 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { provinces } from '../data/provinces';
+---
+
+<Layout title="MVETT — Espace Modération & Curation">
+  <div class="admin-wrapper" id="adminWrapper">
+    
+    <!-- Top Navigation Header -->
+    <header class="admin-header">
+      <div class="header-left">
+        <a href="/" class="brand-link" title="Retour au Diaporama">
+          <span class="brand-title">MVETT</span>
+          <span class="admin-pill">Curation & Modération</span>
+        </a>
+      </div>
+
+      <div class="header-right">
+        <a href="/" class="btn-back-home">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Retour au Diaporama 3D</span>
+        </a>
+
+        <!-- Pastille utilisateur -->
+        <div class="user-pill" id="adminUserPill" style="display: none;">
+          <img class="user-avatar" id="adminUserAvatar" src="" alt="" />
+          <span class="user-name" id="adminUserName"></span>
+          <button class="btn-logout" id="adminBtnLogout" title="Déconnexion" type="button">✕</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Écran de verrouillage / Connexion si non-admin -->
+    <section class="admin-auth-gate" id="adminAuthGate" style="display: none;">
+      <div class="gate-card">
+        <div class="gate-badge">Accès Restreint</div>
+        <h1 class="gate-title">Espace Curation du Patrimoine</h1>
+        <p class="gate-desc">
+          Cet espace permet de valider les photographies citoyennes avant leur intégration dans le grand diaporama officiel des 9 provinces.
+        </p>
+
+        <div class="gate-actions">
+          <button type="button" class="btn-google-login" id="btnAdminGoogle">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Connexion Google (Compte Curateur)</span>
+          </button>
+
+          <button type="button" class="btn-demo-admin" id="btnAdminDemo">
+            ✦ Débloquer en Mode Démo Admin
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tableau de bord de modération (Actif une fois connecté en admin) -->
+    <main class="admin-dashboard" id="adminDashboard" style="display: none;">
+      
+      <!-- KPI Stats Bar -->
+      <section class="kpi-grid">
+        <div class="kpi-card highlight-pending">
+          <div class="kpi-icon">⏳</div>
+          <div class="kpi-data">
+            <span class="kpi-value" id="countPending">0</span>
+            <span class="kpi-label">À valider (Pending)</span>
+          </div>
+        </div>
+
+        <div class="kpi-card highlight-approved">
+          <div class="kpi-icon">✓</div>
+          <div class="kpi-data">
+            <span class="kpi-value" id="countApproved">0</span>
+            <span class="kpi-label">Diffusées en 3D</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon">📷</div>
+          <div class="kpi-data">
+            <span class="kpi-value" id="countTotal">0</span>
+            <span class="kpi-label">Total Contributions</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon">🇬🇦</div>
+          <div class="kpi-data">
+            <span class="kpi-value">9 / 9</span>
+            <span class="kpi-label">Provinces du Gabon</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contrôles et Filtres -->
+      <section class="admin-controls">
+        <!-- Filtre Statut -->
+        <div class="status-tabs">
+          <button type="button" class="tab-btn active" data-status="pending">
+            ⏳ En attente <span class="tab-counter" id="tabPendingBadge">0</span>
+          </button>
+          <button type="button" class="tab-btn" data-status="approved">
+            ✓ Approuvées <span class="tab-counter" id="tabApprovedBadge">0</span>
+          </button>
+          <button type="button" class="tab-btn" data-status="all">
+            Toutes les photos
+          </button>
+        </div>
+
+        <!-- Filtre Province -->
+        <div class="province-selector-wrapper">
+          <select id="adminProvinceFilter" class="admin-select">
+            <option value="all">Toutes les provinces (G1 à G9)</option>
+            {provinces.map((prov) => (
+              <option value={prov.id}>
+                {prov.code} — {prov.name} ({prov.capital})
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+
+      <!-- Grille des photographies soumises -->
+      <section class="submissions-grid" id="submissionsGrid">
+        <!-- Rempli dynamiquement en JS -->
+      </section>
+
+      <!-- État vide -->
+      <div class="admin-empty-state" id="adminEmptyState" style="display: none;">
+        <div class="empty-icon">🌿</div>
+        <h3 class="empty-title">Aucune photo dans cette catégorie</h3>
+        <p class="empty-desc">Toutes les contributions ont été traitées ou aucune photo ne correspond aux filtres.</p>
+      </div>
+
+    </main>
+
+  </div>
+</Layout>
+
+<script>
+  import { photoStore, type CommunityPhoto, type UserProfile } from '../lib/photo-store';
+  import { provinces } from '../data/provinces';
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const authGate = document.getElementById('adminAuthGate');
+    const dashboard = document.getElementById('adminDashboard');
+    const userPill = document.getElementById('adminUserPill');
+    const userAvatar = document.getElementById('adminUserAvatar') as HTMLImageElement | null;
+    const userName = document.getElementById('adminUserName');
+    const btnLogout = document.getElementById('adminBtnLogout');
+    const btnGoogle = document.getElementById('btnAdminGoogle');
+    const btnDemo = document.getElementById('btnAdminDemo');
+
+    const countPending = document.getElementById('countPending');
+    const countApproved = document.getElementById('countApproved');
+    const countTotal = document.getElementById('countTotal');
+    const tabPendingBadge = document.getElementById('tabPendingBadge');
+    const tabApprovedBadge = document.getElementById('tabApprovedBadge');
+
+    const statusTabs = document.querySelectorAll('.tab-btn');
+    const provinceFilter = document.getElementById('adminProvinceFilter') as HTMLSelectElement | null;
+    const grid = document.getElementById('submissionsGrid');
+    const emptyState = document.getElementById('adminEmptyState');
+
+    let currentStatusFilter: 'pending' | 'approved' | 'all' = 'pending';
+    let currentProvinceFilter: string = 'all';
+    let currentUser: UserProfile | null = null;
+    let allPhotos: CommunityPhoto[] = [];
+
+    // Vérification de la session & droits
+    async function checkAuth() {
+      currentUser = await photoStore.getCurrentUser();
+      renderAuthUI();
+      if (currentUser) {
+        await loadPhotos();
+      }
+    }
+
+    function renderAuthUI() {
+      const isAuth = !!currentUser;
+      const isAdmin = currentUser && (photoStore.isAdmin(currentUser) || currentUser.isDemo);
+
+      if (isAdmin) {
+        if (authGate) authGate.style.display = 'none';
+        if (dashboard) dashboard.style.display = 'block';
+        if (userPill) userPill.style.display = 'inline-flex';
+        if (userName) userName.textContent = `${currentUser.name} (Admin)`;
+        if (userAvatar && currentUser.avatar) userAvatar.src = currentUser.avatar;
+      } else {
+        if (authGate) authGate.style.display = 'flex';
+        if (dashboard) dashboard.style.display = 'none';
+        if (userPill) userPill.style.display = 'none';
+      }
+    }
+
+    async function loadPhotos() {
+      allPhotos = await photoStore.getPhotos({ status: 'all' });
+      updateCounts();
+      renderCards();
+    }
+
+    function updateCounts() {
+      const pendingList = allPhotos.filter((p) => p.status === 'pending');
+      const approvedList = allPhotos.filter((p) => p.status === 'approved');
+
+      if (countPending) countPending.textContent = String(pendingList.length);
+      if (countApproved) countApproved.textContent = String(approvedList.length);
+      if (countTotal) countTotal.textContent = String(allPhotos.length);
+
+      if (tabPendingBadge) tabPendingBadge.textContent = String(pendingList.length);
+      if (tabApprovedBadge) tabApprovedBadge.textContent = String(approvedList.length);
+    }
+
+    function renderCards() {
+      if (!grid || !emptyState) return;
+
+      let filtered = allPhotos;
+
+      // Filtre par statut
+      if (currentStatusFilter !== 'all') {
+        filtered = filtered.filter((p) => p.status === currentStatusFilter);
+      }
+
+      // Filtre par province
+      if (currentProvinceFilter !== 'all') {
+        filtered = filtered.filter((p) => p.province_id === currentProvinceFilter);
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        emptyState.style.display = 'flex';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      grid.innerHTML = filtered.map((photo) => {
+        const prov = provinces.find((p) => p.id === photo.province_id);
+        const provName = prov ? `${prov.code} · ${prov.name}` : photo.province_id;
+        const dateStr = new Date(photo.created_at).toLocaleDateString('fr-FR', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+        const isApproved = photo.status === 'approved';
+        const isPending = photo.status === 'pending';
+
+        return `
+          <article class="submission-card ${photo.status}" data-photo-id="${photo.id}">
+            <div class="card-thumb">
+              <img src="${photo.image_url}" alt="${photo.title}" loading="lazy" />
+              <div class="card-status-badge ${photo.status}">
+                ${isApproved ? '✓ Approuvée (3D En Ligne)' : isPending ? '⏳ En Attente' : '✕ Rejetée'}
+              </div>
+              <span class="card-province-badge">${provName}</span>
+            </div>
+
+            <div class="card-body">
+              <div class="card-top">
+                <h3 class="card-title">${photo.title}</h3>
+                <p class="card-location">${photo.location}</p>
+              </div>
+
+              ${photo.caption ? `<p class="card-caption">« ${photo.caption} »</p>` : '<p class="card-caption empty">Aucune légende fournie</p>'}
+
+              <div class="card-contributor">
+                ${photo.user_avatar ? `<img src="${photo.user_avatar}" class="contributor-avatar" alt="" />` : `<span class="contributor-initial">${photo.user_name.charAt(0)}</span>`}
+                <div class="contributor-meta">
+                  <span class="contributor-name">${photo.user_name}</span>
+                  <span class="submission-date">${dateStr}</span>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                ${!isApproved ? `
+                  <button type="button" class="btn-action-approve" data-approve-id="${photo.id}">
+                    ✓ Approuver pour le Diaporama 3D
+                  </button>
+                ` : `
+                  <a href="/?photo=${photo.id}" class="btn-action-view" target="_blank">
+                    👁 Voir dans le Diaporama ↗
+                  </a>
+                `}
+
+                <button type="button" class="btn-action-reject" data-reject-id="${photo.id}" title="Rejeter et retirer">
+                  ${isApproved ? 'Retirer' : 'Rejeter'}
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      // Attacher les clics d'approbation et de rejet
+      grid.querySelectorAll('.btn-action-approve').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-approve-id');
+          if (pId) {
+            btn.textContent = 'Approbation en cours...';
+            (btn as HTMLButtonElement).disabled = true;
+            await photoStore.approvePhoto(pId);
+            await loadPhotos();
+          }
+        });
+      });
+
+      grid.querySelectorAll('.btn-action-reject').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const pId = (btn as HTMLElement).getAttribute('data-reject-id');
+          if (pId && confirm('Voulez-vous retirer cette photographie de la plateforme ?')) {
+            await photoStore.rejectPhoto(pId);
+            await loadPhotos();
+          }
+        });
+      });
+    }
+
+    // Gestion des onglets de statut
+    statusTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        statusTabs.forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentStatusFilter = (tab.getAttribute('data-status') || 'pending') as any;
+        renderCards();
+      });
+    });
+
+    // Gestion du filtre par province
+    provinceFilter?.addEventListener('change', () => {
+      currentProvinceFilter = provinceFilter.value;
+      renderCards();
+    });
+
+    // Authentification
+    btnGoogle?.addEventListener('click', async () => {
+      await photoStore.loginWithGoogle();
+    });
+
+    btnDemo?.addEventListener('click', async () => {
+      await photoStore.loginAsGuest('Conservateur MVETT', 'alloghofrederic9@gmail.com');
+      await checkAuth();
+    });
+
+    btnLogout?.addEventListener('click', async () => {
+      await photoStore.logout();
+      await checkAuth();
+    });
+
+    window.addEventListener('mvett:auth-changed', () => {
+      checkAuth();
+    });
+
+    window.addEventListener('mvett:photos-updated', () => {
+      loadPhotos();
+    });
+
+    checkAuth();
+  });
+</script>
+
+<style>
+  .admin-wrapper {
+    min-height: 100vh;
+    background: #0d1110;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-main);
+  }
+
+  /* Header */
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.4rem 3rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(16, 20, 19, 0.85);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .brand-link {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .brand-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .admin-pill {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: rgba(234, 179, 8, 0.18);
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    color: #fde047;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  .btn-back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-back-home:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+
+  .user-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.6rem 0.25rem 0.4rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .user-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+  }
+
+  .btn-logout {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 0.75rem;
+    margin-left: 0.2rem;
+  }
+
+  .btn-logout:hover {
+    color: #ef4444;
+  }
+
+  /* Auth Gate */
+  .admin-auth-gate {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+  }
+
+  .gate-card {
+    max-width: 500px;
+    text-align: center;
+    background: rgba(22, 28, 26, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 20px;
+    padding: 3rem 2.4rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  }
+
+  .gate-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 1.2rem;
+  }
+
+  .gate-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+  }
+
+  .gate-desc {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.65);
+    margin-bottom: 2.2rem;
+  }
+
+  .gate-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .btn-google-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    width: 100%;
+    padding: 0.85rem;
+    background: #ffffff;
+    color: #1a202c;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.2s ease;
+  }
+
+  .btn-google-login:hover {
+    transform: translateY(-1px);
+    background: #f1f5f9;
+  }
+
+  .btn-demo-admin {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f8fafc;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-demo-admin:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Dashboard */
+  .admin-dashboard {
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2.5rem 3rem 5rem 3rem;
+  }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .kpi-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.4rem 1.6rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  .kpi-card.highlight-pending {
+    border-color: rgba(234, 179, 8, 0.35);
+    background: rgba(234, 179, 8, 0.06);
+  }
+
+  .kpi-card.highlight-approved {
+    border-color: rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.06);
+  }
+
+  .kpi-icon {
+    font-size: 1.8rem;
+  }
+
+  .kpi-data {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .kpi-value {
+    font-family: var(--font-mono);
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .kpi-label {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.2rem;
+  }
+
+  /* Controls */
+  .admin-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .status-tabs {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .tab-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.7);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .tab-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .tab-btn.active {
+    background: #ffffff;
+    color: #0f1412;
+    border-color: #ffffff;
+    font-weight: 600;
+  }
+
+  .tab-counter {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+  }
+
+  .tab-btn.active .tab-counter {
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .admin-select {
+    padding: 0.6rem 1rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .admin-select option {
+    background: #141917;
+    color: #ffffff;
+  }
+
+  /* Submissions Grid */
+  .submissions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.8rem;
+  }
+
+  .submission-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  .submission-card:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+  }
+
+  .submission-card.pending {
+    border-left: 3px solid #eab308;
+  }
+
+  .submission-card.approved {
+    border-left: 3px solid #22c55e;
+  }
+
+  .card-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #000000;
+  }
+
+  .card-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .card-status-badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.22rem 0.6rem;
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+  }
+
+  .card-status-badge.pending {
+    background: rgba(234, 179, 8, 0.85);
+    color: #000000;
+  }
+
+  .card-status-badge.approved {
+    background: rgba(34, 197, 94, 0.85);
+    color: #000000;
+  }
+
+  .card-province-badge {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+
+  .card-body {
+    padding: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .card-title {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .card-location {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.8rem;
+  }
+
+  .card-caption {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.45;
+    margin-bottom: 1.2rem;
+  }
+
+  .card-caption.empty {
+    font-style: normal;
+    color: rgba(255, 255, 255, 0.35);
+  }
+
+  .card-contributor {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: auto;
+    padding-top: 0.9rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 1.2rem;
+  }
+
+  .contributor-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+  }
+
+  .contributor-initial {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+
+  .contributor-meta {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .contributor-name {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .submission-date {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .btn-action-approve {
+    flex: 1;
+    background: #22c55e;
+    color: #062e14;
+    border: none;
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn-action-approve:hover:not(:disabled) {
+    background: #16a34a;
+    transform: translateY(-1px);
+  }
+
+  .btn-action-view {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+
+  .btn-action-view:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-action-reject {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-action-reject:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #ffffff;
+  }
+
+  /* Empty State */
+  .admin-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 1.5rem;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+  }
+
+  .empty-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .empty-desc {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 400px;
+  }
+
+  @media (max-width: 768px) {
+    .admin-header {
+      padding: 1rem 1.2rem;
+    }
+    .admin-dashboard {
+      padding: 1.5rem 1.2rem;
+    }
+    .admin-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .status-tabs {
+      overflow-x: auto;
+    }
+  }
+</style>

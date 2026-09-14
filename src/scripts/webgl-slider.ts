@@ -36,23 +36,78 @@ const fragmentShader = `
                mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
   }
 
-  // Full-screen cover mode with mouse parallax and subtle Ken Burns breathing
-  vec2 getCoverUV(vec2 uv, vec2 screenRes, vec2 imageRes, vec2 mouseOffset, float breathe) {
+  // Sample cinematic frame (preserves portrait 9:16 aspect ratio on desktop with ambient blurred backdrop & framing)
+  vec4 sampleCinematic(sampler2D tex, vec2 uv, vec2 screenRes, vec2 imageRes, vec2 mouseOffset, float breathe, vec2 distortion, vec2 chromaOffset) {
     float screenAspect = screenRes.x / screenRes.y;
     float imageAspect = imageRes.x / imageRes.y;
-    
-    vec2 scale = vec2(1.0);
-    
-    if (screenAspect > imageAspect) {
-      scale = vec2(1.0, screenAspect / imageAspect);
-    } else {
-      scale = vec2(imageAspect / screenAspect, 1.0);
+
+    // Detect portrait photo on landscape/desktop display (e.g. 9:16 smartphone photo on a 16:9 screen)
+    bool isPortraitOnDesktop = (imageAspect < 0.95) && (screenAspect > 1.05);
+
+    if (!isPortraitOnDesktop) {
+      // Standard full-bleed cover mode (desktop 16:9 on desktop, or mobile 9:16 on mobile)
+      vec2 scale = vec2(1.0);
+      if (screenAspect > imageAspect) {
+        scale = vec2(1.0, screenAspect / imageAspect);
+      } else {
+        scale = vec2(imageAspect / screenAspect, 1.0);
+      }
+      scale *= breathe;
+      vec2 centeredUV = (uv - 0.5 - mouseOffset * 0.018) / scale + 0.5 + distortion;
+
+      float r = texture2D(tex, centeredUV + chromaOffset).r;
+      float g = texture2D(tex, centeredUV).g;
+      float b = texture2D(tex, centeredUV - chromaOffset).b;
+      return vec4(r, g, b, 1.0);
     }
 
-    // Apply smooth breathing zoom and subtle mouse parallax
-    scale *= breathe;
-    vec2 centeredUV = (uv - 0.5 - mouseOffset * 0.018) / scale + 0.5;
-    return centeredUV;
+    // --- CINEMATIC PORTRAIT ON HORIZONTAL SCREEN ---
+    // 1. Frame geometry (uses 88% screen height for a museum/gallery display)
+    float frameHeightRatio = 0.88;
+    vec2 frameScale = vec2((imageAspect / screenAspect) * frameHeightRatio, frameHeightRatio) * breathe;
+    vec2 uvFrame = (uv - 0.5 - mouseOffset * 0.015) / frameScale + 0.5 + distortion;
+
+    // 2. Ambient blurred backdrop (zoomed cover of the same image with dark vignette)
+    vec2 bgScale = vec2(1.0, screenAspect / imageAspect) * 1.15;
+    vec2 uvBg = (uv - 0.5 - mouseOffset * 0.006) / bgScale + 0.5 + distortion * 0.4;
+
+    // Multi-tap ambient blur
+    vec4 bgCol = vec4(0.0);
+    float blurRadius = 0.016;
+    bgCol += texture2D(tex, uvBg + vec2(0.0, 0.0)) * 0.28;
+    bgCol += texture2D(tex, uvBg + vec2(blurRadius, blurRadius)) * 0.18;
+    bgCol += texture2D(tex, uvBg + vec2(-blurRadius, blurRadius)) * 0.18;
+    bgCol += texture2D(tex, uvBg + vec2(blurRadius, -blurRadius)) * 0.18;
+    bgCol += texture2D(tex, uvBg + vec2(-blurRadius, -blurRadius)) * 0.18;
+    // Darken ambient background for high contrast
+    bgCol.rgb *= 0.35;
+
+    // Check if pixel is inside the framed photo
+    bool inFrame = (uvFrame.x >= 0.0 && uvFrame.x <= 1.0 && uvFrame.y >= 0.0 && uvFrame.y <= 1.0);
+
+    if (inFrame) {
+      // Sample crisp central photo with chromatic split
+      float r = texture2D(tex, uvFrame + chromaOffset).r;
+      float g = texture2D(tex, uvFrame).g;
+      float b = texture2D(tex, uvFrame - chromaOffset).b;
+      vec3 photoCol = vec3(r, g, b);
+
+      // Elegant inner hairline border highlight
+      vec2 borderDist = min(uvFrame, 1.0 - uvFrame);
+      float edgeMin = min(borderDist.x, borderDist.y);
+      float borderFactor = smoothstep(0.008, 0.001, edgeMin);
+      photoCol = mix(photoCol, vec3(1.0, 1.0, 1.0) * 0.9, borderFactor * 0.45);
+
+      return vec4(photoCol, 1.0);
+    } else {
+      // Soft cinematic drop shadow around the framed portrait
+      vec2 shadowDist = max(abs(uv - 0.5 - mouseOffset * 0.015) - frameScale * 0.5, 0.0);
+      float shadow = length(shadowDist);
+      float shadowFactor = smoothstep(0.0, 0.07, shadow);
+      bgCol.rgb *= mix(0.12, 1.0, shadowFactor);
+
+      return bgCol;
+    }
   }
 
   void main() {
@@ -71,28 +126,32 @@ const fragmentShader = `
     float wave = sin(vUv.y * 13.0 + uProgress * 6.28318 * uDirection) * 0.04;
     vec2 distortion = vec2(combinedNoise + wave, combinedNoise * 0.8) * waveProgress * uIntensity;
 
-    // Full-bleed UVs
-    vec2 uvCurrent = getCoverUV(vUv, uResolution, uCurrentResolution, uMouse, breathe);
-    vec2 uvNext = getCoverUV(vUv, uResolution, uNextResolution, uMouse, breathe);
-
-    // Apply liquid distortion
-    vec2 displacedUV1 = uvCurrent + distortion * (1.0 - uProgress);
-    vec2 displacedUV2 = uvNext - distortion * uProgress;
-
     // Chromatic aberration (RGB split during transition)
     vec2 chromaOffset = vec2(0.022, 0.008) * waveProgress * uDirection;
 
-    // Sample Current Image with chromatic split
-    float r1 = texture2D(uCurrentTexture, displacedUV1 + chromaOffset).r;
-    float g1 = texture2D(uCurrentTexture, displacedUV1).g;
-    float b1 = texture2D(uCurrentTexture, displacedUV1 - chromaOffset).b;
-    vec4 col1 = vec4(r1, g1, b1, 1.0);
+    // Sample Current Image with cinematic adaptation (16:9 or 9:16 framed)
+    vec4 col1 = sampleCinematic(
+      uCurrentTexture,
+      vUv,
+      uResolution,
+      uCurrentResolution,
+      uMouse,
+      breathe,
+      distortion * (1.0 - uProgress),
+      chromaOffset
+    );
 
-    // Sample Next Image with chromatic split
-    float r2 = texture2D(uNextTexture, displacedUV2 - chromaOffset).r;
-    float g2 = texture2D(uNextTexture, displacedUV2).g;
-    float b2 = texture2D(uNextTexture, displacedUV2 + chromaOffset).b;
-    vec4 col2 = vec4(r2, g2, b2, 1.0);
+    // Sample Next Image with cinematic adaptation (16:9 or 9:16 framed)
+    vec4 col2 = sampleCinematic(
+      uNextTexture,
+      vUv,
+      uResolution,
+      uNextResolution,
+      uMouse,
+      breathe,
+      -distortion * uProgress,
+      -chromaOffset
+    );
 
     // Smoothstep blend between frames
     vec4 finalColor = mix(col1, col2, smoothstep(0.0, 1.0, uProgress));

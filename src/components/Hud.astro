@@ -27,8 +27,13 @@
           <button class="user-pill-logout" id="hudBtnLogout" title="Se déconnecter" type="button">✕</button>
         </div>
 
+        <!-- Bouton Espace Admin (si administrateur connecté) -->
+        <a href="/admin" class="hud-btn-admin" id="hudBtnAdmin" style="display: none;" title="Espace Curation & Modération">
+          <span>⚙ Curation</span>
+        </a>
+
         <!-- Bouton Galerie / Archives -->
-        <button class="hud-btn-gallery" id="btnOpenGallery" type="button" aria-label="Explorer la galerie citoyenne">
+        <button class="hud-btn-gallery" id="btnOpenGallery" type="button" aria-label="Explorer la galerie citoyenne" title="Explorer la galerie citoyenne">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="3" y="3" width="7" height="7"></rect>
             <rect x="14" y="3" width="7" height="7"></rect>
@@ -39,7 +44,7 @@
         </button>
 
         <!-- Bouton unique Contribuer -->
-        <button class="hud-btn-upload" id="btnOpenUpload" type="button" aria-label="Téléverser une photographie">
+        <button class="hud-btn-upload" id="btnOpenUpload" type="button" aria-label="Téléverser une photographie" title="Téléverser une photographie">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -77,6 +82,7 @@
   function initHud() {
     const btnUpload = document.getElementById('btnOpenUpload');
     const btnGallery = document.getElementById('btnOpenGallery');
+    const btnAdmin = document.getElementById('hudBtnAdmin');
     const userPill = document.getElementById('hudUserPill');
     const userAvatar = document.getElementById('hudUserAvatar') as HTMLImageElement | null;
     const userName = document.getElementById('hudUserName');
@@ -104,8 +110,12 @@
             userAvatar.style.display = 'none';
           }
         }
+        if (btnAdmin) {
+          btnAdmin.style.display = (photoStore.isAdmin(user) || user.isDemo) ? 'inline-flex' : 'none';
+        }
       } else {
         if (userPill) userPill.style.display = 'none';
+        if (btnAdmin) btnAdmin.style.display = 'none';
       }
     }
 
@@ -261,6 +271,29 @@
     align-items: center;
     gap: 0.6rem;
     pointer-events: auto;
+  }
+
+  .hud-btn-admin {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 0.38rem 0.8rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(234, 179, 8, 0.18);
+    color: #fde047;
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hud-btn-admin:hover {
+    background: rgba(234, 179, 8, 0.35);
+    border-color: #fde047;
+    color: #ffffff;
+    transform: translateY(-1px);
   }
 
   .hud-btn-gallery {
@@ -437,26 +470,58 @@
       padding: 0.15rem 0.42rem;
     }
     .hud-top-right {
-      gap: 0.4rem;
+      gap: 0.35rem;
       flex-shrink: 0;
     }
-    .user-pill {
-      padding: 0.2rem 0.4rem 0.2rem 0.35rem;
+    .hud-actions-group {
       gap: 0.35rem;
+    }
+    .user-pill {
+      height: 34px;
+      padding: 0 0.45rem 0 0.35rem;
+      gap: 0.3rem;
+      box-sizing: border-box;
     }
     .user-pill-name {
       display: none; /* Cacher le nom textuel sur mobile pour un en-tête compact et harmonieux */
     }
     .user-pill-avatar {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
+    }
+    .user-pill-logout {
+      padding: 0 0.15rem;
+      font-size: 0.75rem;
+    }
+    .hud-btn-admin {
+      height: 34px;
+      padding: 0 0.6rem;
+      font-size: 0.68rem;
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
     }
     .hud-btn-gallery,
     .hud-btn-upload {
-      padding: 0.35rem 0.65rem;
-      font-size: 0.72rem;
-      gap: 0.35rem;
-      white-space: nowrap;
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      padding: 0;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+    .hud-btn-gallery span,
+    .hud-btn-upload span {
+      display: none;
+    }
+    .hud-btn-gallery svg,
+    .hud-btn-upload svg {
+      width: 14px;
+      height: 14px;
     }
     .caption-block {
       max-width: 90vw;
