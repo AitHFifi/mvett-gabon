@@ -1,0 +1,309 @@
+---
+// Endorsements.astro - Section 07 : Voix de l'Industrie & Recommandations Officielles
+import { ENDORSEMENTS_DATA } from '../../data/journal-emeraude/content';
+---
+
+<section class="emeraude-endorsements" id="recommandations">
+  <div class="endorsements-container">
+    <!-- En-tête de section -->
+    <div class="endorsements-header">
+      <div class="section-badge">
+        <span class="badge-num">05</span>
+        <span class="badge-separator">/</span>
+        <span class="badge-label">VOIX DE L'INDUSTRIE & CRÉDIBILITÉ INSTITUTIONNELLE</span>
+      </div>
+      <h2 class="endorsements-headline">
+        L'Éloge des Diffuseurs, des Jurys et des Partenaires.
+      </h2>
+      <p class="endorsements-subheadline">
+        Au-delà de la popularité numérique, ce sont les professionnels du cinéma, les directions de marques et les institutions culturelles qui attestent de la rigueur et de l'impact de Martine Myphe Lomba.
+      </p>
+    </div>
+
+    <!-- Grille des Témoignages Haute Couture (2x2 Asymétrique) -->
+    <div class="endorsements-grid">
+      {ENDORSEMENTS_DATA.map((item, idx) => (
+        <article class="endorsement-card" class:list={[{ 'card-featured': idx === 0 || idx === 3 }]} data-cursor="AVIS">
+          <div class="card-glass-glow"></div>
+          
+          <div class="card-header-meta">
+            <span class="badge-authority">{item.badge}</span>
+            <span class="quote-mark-icon">“</span>
+          </div>
+
+          <blockquote class="quote-content">
+            <p class="quote-text">{item.quote}</p>
+          </blockquote>
+
+          <div class="author-block">
+            <div class="author-monogram">
+              <span>{item.author.charAt(0)}</span>
+            </div>
+            <div class="author-info">
+              <h3 class="author-name">{item.author}</h3>
+              <p class="author-role">{item.role}</p>
+              <p class="author-org">{item.organization}</p>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <!-- Ruban de Confiance Institutionnelle (Marques & Partenaires) -->
+    <div class="trust-ticker-wrap">
+      <span class="ticker-label">ÉCOSYSTÈMES & PARTENAIRES DE PRESTIGE :</span>
+      <div class="ticker-badges-row">
+        <span class="trust-badge">CANAL+ AFRIQUE</span>
+        <span class="trust-sep">•</span>
+        <span class="trust-badge">FESTICINÉ</span>
+        <span class="trust-sep">•</span>
+        <span class="trust-badge">EXPOSITION UNIVERSELLE OSAKA 2025</span>
+        <span class="trust-sep">•</span>
+        <span class="trust-badge">CARAVANE TOURISTIQUE DU GABON</span>
+        <span class="trust-sep">•</span>
+        <span class="trust-badge">INSTITUT FRANÇAIS DU GABON</span>
+        <span class="trust-sep">•</span>
+        <span class="trust-badge">ÉCRANS NOIRS</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .emeraude-endorsements {
+    position: relative;
+    padding: 8.5rem 2.5rem;
+    background: linear-gradient(180deg, #030806 0%, #04140e 50%, #030806 100%);
+    border-top: 1px solid rgba(16, 185, 129, 0.12);
+  }
+
+  .endorsements-container {
+    max-width: 1380px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .endorsements-header {
+    max-width: 960px;
+    margin-bottom: 5rem;
+  }
+
+  .section-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    color: var(--color-emeraude-primary);
+    margin-bottom: 1.25rem;
+    padding: 0.35rem 0.85rem;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 999px;
+  }
+
+  .endorsements-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(2.4rem, 4.2vw, 4rem);
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.15;
+    margin-bottom: 1.25rem;
+  }
+
+  .endorsements-subheadline {
+    font-size: 1.15rem;
+    color: var(--color-text-muted);
+    line-height: 1.65;
+    max-width: 820px;
+  }
+
+  /* Grille des Cartes */
+  .endorsements-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    margin-bottom: 5.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .endorsements-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+  }
+
+  .endorsement-card {
+    position: relative;
+    background: rgba(8, 26, 20, 0.55);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 22px;
+    padding: 3rem 2.5rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                border-color 0.4s ease, 
+                box-shadow 0.4s ease;
+    overflow: hidden;
+  }
+
+  .endorsement-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(212, 175, 55, 0.35);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6), 0 0 25px rgba(16, 185, 129, 0.1);
+  }
+
+  .card-featured {
+    background: rgba(12, 28, 22, 0.7);
+    border-color: rgba(212, 175, 55, 0.25);
+  }
+
+  .card-glass-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
+  }
+
+  .card-header-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+  }
+
+  .badge-authority {
+    font-family: var(--font-heading);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--color-gold-light);
+    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+  }
+
+  .quote-mark-icon {
+    font-family: var(--font-serif);
+    font-size: 2.8rem;
+    line-height: 0.5;
+    color: rgba(212, 175, 55, 0.25);
+  }
+
+  .quote-content {
+    margin-bottom: 2.5rem;
+    flex-grow: 1;
+  }
+
+  .quote-text {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: #f1f5f9;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .author-block {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .author-monogram {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1.5px solid var(--color-emeraude-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-emeraude-primary);
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #ffffff;
+    margin-bottom: 0.15rem;
+  }
+
+  .author-role {
+    font-size: 0.8rem;
+    color: var(--color-gold-primary);
+    margin-bottom: 0.1rem;
+  }
+
+  .author-org {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  /* Ticker Institutionnel */
+  .trust-ticker-wrap {
+    padding: 1.75rem 2rem;
+    background: rgba(4, 16, 12, 0.8);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  @media (min-width: 992px) {
+    .trust-ticker-wrap {
+      flex-direction: row;
+      justify-content: space-between;
+      text-align: left;
+    }
+  }
+
+  .ticker-label {
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    color: var(--color-gold-light);
+    white-space: nowrap;
+  }
+
+  .ticker-badges-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: #94a39d;
+  }
+
+  .trust-badge {
+    color: #e2e8f0;
+    transition: color 0.2s ease;
+  }
+
+  .trust-badge:hover {
+    color: var(--color-emeraude-primary);
+  }
+
+  .trust-sep {
+    color: rgba(212, 175, 55, 0.4);
+  }
+</style>

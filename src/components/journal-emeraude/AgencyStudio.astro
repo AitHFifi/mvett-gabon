@@ -1,0 +1,368 @@
+---
+// AgencyStudio.astro - Présentation de l'agence et du studio de production (inauguré en 2025)
+import { AGENCY_SERVICES } from '../../data/journal-emeraude/content';
+---
+
+<section class="emeraude-agency-section" id="studio">
+  <div class="agency-container">
+    <!-- En-tête de section -->
+    <div class="agency-header-row">
+      <div class="agency-title-block">
+        <div class="section-badge">
+          <span class="badge-num">03</span>
+          <span class="badge-separator">/</span>
+          <span class="badge-label">L'AGENCE & LE STUDIO AUDIOVISUEL</span>
+        </div>
+        <h2 class="agency-headline">
+          Une Agence Créative & Un Studio Haut de Gamme à Libreville.
+        </h2>
+      </div>
+
+      <div class="agency-intro-text">
+        <p>
+          Inauguré en 2025, <strong>Le Journal d'Émeraude</strong> n'est pas seulement un média : c'est un écosystème de production indépendant réunissant auteurs, réalisateurs et stratèges de marques pour concevoir des campagnes qui transcendent le simple placement de produit.
+        </p>
+      </div>
+    </div>
+
+    <!-- Grille des 4 Prestations de l'Agence -->
+    <div class="services-grid">
+      {AGENCY_SERVICES.map((srv) => (
+        <div class="service-card" data-cursor="STUDIO">
+          <div class="service-card-top">
+            <span class="service-num">{srv.number}</span>
+            <div class="service-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d={srv.icon}></path>
+              </svg>
+            </div>
+          </div>
+
+          <h3 class="service-title">{srv.title}</h3>
+          <p class="service-subtitle">{srv.subtitle}</p>
+          <p class="service-desc">{srv.description}</p>
+
+          <!-- Livrables & Garanties -->
+          <div class="service-deliverables">
+            <span class="deliv-heading">Inclus dans l'accompagnement :</span>
+            <ul class="deliv-list">
+              {srv.deliverables.map((item) => (
+                <li>
+                  <span class="check-bullet">✦</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Timeline Méthodologie en 4 Étapes -->
+    <div class="methodology-card">
+      <div class="methodology-header">
+        <h3 class="methodology-title">Notre Méthode de Fabrication</h3>
+        <span class="methodology-badge">STANDARD BROADCAST & DIGITAL</span>
+      </div>
+
+      <div class="methodology-steps">
+        <div class="method-step">
+          <div class="step-circle">01</div>
+          <h4 class="step-title">Brief & Cadrage</h4>
+          <p class="step-desc">Analyse des objectifs de marque, du positionnement et des messages clés à transmettre.</p>
+        </div>
+
+        <div class="method-step-line"></div>
+
+        <div class="method-step">
+          <div class="step-circle">02</div>
+          <h4 class="step-title">Scripting & D.A.</h4>
+          <p class="step-desc">Écriture sur-mesure par l'équipe d'Émeraude pour garantir le ton juste, l'humour et l'émotion.</p>
+        </div>
+
+        <div class="method-step-line"></div>
+
+        <div class="method-step">
+          <div class="step-circle">03</div>
+          <h4 class="step-title">Tournage 4K</h4>
+          <p class="step-desc">Production en studio ou en extérieur avec équipement cinéma professionnel et direction d'acteurs.</p>
+        </div>
+
+        <div class="method-step-line"></div>
+
+        <div class="method-step">
+          <div class="step-circle">04</div>
+          <h4 class="step-title">Impact & ROI</h4>
+          <p class="step-desc">Diffusion stratégique, amplification sur les réseaux et bilan chiffré des retombées.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .emeraude-agency-section {
+    position: relative;
+    padding: 8rem 2.5rem;
+    background: linear-gradient(180deg, #030806 0%, #061913 50%, #030806 100%);
+    border-top: 1px solid rgba(16, 185, 129, 0.1);
+  }
+
+  .agency-container {
+    max-width: 1380px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .agency-header-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    align-items: end;
+    margin-bottom: 5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .agency-header-row {
+      grid-template-columns: 7fr 5fr;
+      gap: 5rem;
+    }
+  }
+
+  .agency-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(2.25rem, 4vw, 3.75rem);
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.15;
+  }
+
+  .agency-intro-text p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #cbd5e1;
+  }
+
+  .agency-intro-text strong {
+    color: var(--color-emeraude-primary);
+  }
+
+  /* Grille des Services */
+  .services-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-bottom: 5rem;
+  }
+
+  @media (min-width: 768px) {
+    .services-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .service-card {
+    background: #061812;
+    border: 1px solid rgba(16, 185, 129, 0.18);
+    border-radius: 18px;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  }
+
+  .service-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    background: #082119;
+  }
+
+  .service-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.75rem;
+  }
+
+  .service-num {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-emeraude-primary);
+  }
+
+  .service-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--color-gold-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .service-title {
+    font-family: var(--font-serif);
+    font-size: 1.85rem;
+    font-weight: 500;
+    color: #ffffff;
+    line-height: 1.25;
+    margin-bottom: 0.5rem;
+  }
+
+  .service-subtitle {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-gold-primary);
+    margin-bottom: 1rem;
+  }
+
+  .service-desc {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: #94a39d;
+    margin-bottom: 2rem;
+  }
+
+  .service-deliverables {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .deliv-heading {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #cbd5e1;
+    margin-bottom: 0.75rem;
+  }
+
+  .deliv-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .deliv-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.45;
+  }
+
+  .check-bullet {
+    color: var(--color-emeraude-primary);
+    font-size: 0.75rem;
+    margin-top: 2px;
+  }
+
+  /* Méthodologie */
+  .methodology-card {
+    background: rgba(4, 16, 12, 0.75);
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    border-radius: 18px;
+    padding: 3rem;
+  }
+
+  .methodology-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .methodology-title {
+    font-family: var(--font-serif);
+    font-size: 1.85rem;
+    color: #ffffff;
+    font-weight: 400;
+  }
+
+  .methodology-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--color-gold-light);
+    background: rgba(212, 175, 55, 0.15);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+  }
+
+  .methodology-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  @media (min-width: 1024px) {
+    .methodology-steps {
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .method-step {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .step-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--color-emeraude-primary);
+    color: #030806;
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .step-title {
+    font-family: var(--font-sans);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.35rem;
+  }
+
+  .step-desc {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+
+  .method-step-line {
+    display: none;
+    width: 40px;
+    height: 1px;
+    background: rgba(212, 175, 55, 0.3);
+  }
+
+  @media (min-width: 1024px) {
+    .method-step-line {
+      display: block;
+    }
+  }
+</style>

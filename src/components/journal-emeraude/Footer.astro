@@ -1,0 +1,255 @@
+---
+// Footer.astro - Pied de page institutionnel & signature de conception Frederic ALLOGHO
+---
+
+<footer class="emeraude-footer">
+  <div class="footer-container">
+    <!-- Colonne 1 : Identité & Signature -->
+    <div class="footer-brand-col">
+      <div class="footer-logo">
+        <span class="logo-name">LE JOURNAL D'ÉMERAUDE</span>
+      </div>
+      <p class="footer-tagline">
+        Plateforme officielle de Martine Myphe Lomba. Studio de production audiovisuelle, création de contenus narratifs et représentations d'égérie panafricaine.
+      </p>
+      <div class="footer-socials">
+        <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" class="social-link" data-cursor="TIKTOK">TikTok (1.2M)</a>
+        <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" class="social-link" data-cursor="FACEBOOK">Facebook (850K)</a>
+        <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" class="social-link" data-cursor="INSTAGRAM">Instagram (450K)</a>
+        <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" class="social-link" data-cursor="YOUTUBE">YouTube</a>
+      </div>
+    </div>
+
+    <!-- Colonne 2 : Navigation Rapide -->
+    <div class="footer-nav-col">
+      <span class="footer-col-title">Navigation</span>
+      <ul class="footer-links">
+        <li><a href="#hero">01. Accueil & Showreel</a></li>
+        <li><a href="#manifeste">02. Le Manifeste</a></li>
+        <li><a href="#showcase">03. Œuvres & Projets</a></li>
+        <li><a href="#studio">04. L'Agence & Studio</a></li>
+        <li><a href="#donnees">05. Données & Impact</a></li>
+        <li><a href="#partenariats">06. Partenariats & Booking</a></li>
+      </ul>
+    </div>
+
+    <!-- Colonne 3 : Bureaux & Management -->
+    <div class="footer-contact-col">
+      <span class="footer-col-title">Bureaux & Management</span>
+      <div class="office-box">
+        <strong>Studio Libreville :</strong>
+        <span>Le Journal d'Émeraude, Libreville, République Gabonaise</span>
+      </div>
+      <div class="office-box">
+        <strong>Relations Marques & Partenariats :</strong>
+        <a href="mailto:alloghofrederic9@gmail.com" class="footer-email">alloghofrederic9@gmail.com</a>
+      </div>
+      <div class="office-timing">
+        <span>Réponse sous 48h ouvrées</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre de Signature Basse -->
+  <div class="footer-bottom-bar">
+    <div class="bottom-container">
+      <p class="copyright-text">
+        © {new Date().getFullYear()} Le Journal d'Émeraude — Martine Myphe Lomba. Tous droits réservés.
+      </p>
+
+      <div class="developer-signature">
+        <span>Conçu & Développé avec excellence par</span>
+        <a href="https://www.allogho.me/" target="_blank" rel="noopener noreferrer" class="dev-link" data-cursor="ALLOGHO">
+          Frederic ALLOGHO
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .emeraude-footer {
+    position: relative;
+    background: #020604;
+    border-top: 1px solid rgba(16, 185, 129, 0.15);
+    padding-top: 5rem;
+  }
+
+  .footer-container {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 0 2.5rem 4rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .footer-container {
+      grid-template-columns: 5fr 3fr 4fr;
+      gap: 3rem;
+    }
+  }
+
+  /* Colonne 1 */
+  .footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .logo-name {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #ffffff;
+  }
+
+  .footer-tagline {
+    font-size: 0.88rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    max-width: 420px;
+    margin-bottom: 1.75rem;
+  }
+
+  .footer-socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+  }
+
+  .social-link {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #cbd5e1;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    transition: all 0.25s ease;
+  }
+
+  .social-link:hover {
+    color: var(--color-gold-light);
+    border-color: var(--color-gold-primary);
+    background: rgba(212, 175, 55, 0.1);
+  }
+
+  /* Colonnes 2 & 3 */
+  .footer-col-title {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--color-gold-primary);
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+  }
+
+  .footer-links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .footer-links a {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: color 0.25s ease;
+  }
+
+  .footer-links a:hover {
+    color: #ffffff;
+    padding-left: 4px;
+  }
+
+  .office-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    color: var(--color-text-muted);
+  }
+
+  .office-box strong {
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .footer-email {
+    color: var(--color-emeraude-primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .footer-email:hover {
+    color: #34d399;
+    text-decoration: underline;
+  }
+
+  .office-timing {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    color: var(--color-gold-primary);
+    border-left: 2px solid rgba(212, 175, 55, 0.4);
+    padding-left: 0.65rem;
+    margin-top: 0.5rem;
+  }
+
+  /* Barre de Signature Basse */
+  .footer-bottom-bar {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.75rem 2.5rem;
+  }
+
+  .bottom-container {
+    max-width: 1380px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .copyright-text {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+
+  .developer-signature {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+
+  .dev-link {
+    color: var(--color-gold-primary);
+    text-decoration: none;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 0.15rem 0.45rem;
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 4px;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    transition: all 0.25s ease;
+  }
+
+  .dev-link:hover {
+    color: #030806;
+    background: var(--color-gold-primary);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+  }
+</style>

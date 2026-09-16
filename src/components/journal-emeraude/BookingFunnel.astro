@@ -1,0 +1,724 @@
+---
+// BookingFunnel.astro - Tunnel de qualification des partenariats en 3 étapes
+---
+
+<section class="emeraude-booking-section" id="partenariats">
+  <div class="booking-container">
+    <!-- En-tête -->
+    <div class="booking-header">
+      <div class="section-badge">
+        <span class="badge-num">05</span>
+        <span class="badge-separator">/</span>
+        <span class="badge-label">CENTRALISATION DES DEMANDES DE PARTENARIATS</span>
+      </div>
+      <h2 class="booking-headline">
+        Initier une Collaboration d'Envergure.
+      </h2>
+      <p class="booking-subheadline">
+        Réservé aux directeurs de marques, agences de communication, producteurs et institutions. Remplissez ce cadrage confidentiel pour un traitement prioritaire sous 48h.
+      </p>
+    </div>
+
+    <!-- Conteneur Formulaire Interactif -->
+    <div class="booking-card">
+      <!-- Indicateur d'Étapes -->
+      <div class="booking-steps-bar">
+        <div class="step-nav-item active" data-step="1">
+          <span class="step-nav-num">1</span>
+          <span class="step-nav-text">Typologie</span>
+        </div>
+        <div class="step-nav-connector"></div>
+        <div class="step-nav-item" data-step="2">
+          <span class="step-nav-num">2</span>
+          <span class="step-nav-text">Cadrage & Budget</span>
+        </div>
+        <div class="step-nav-connector"></div>
+        <div class="step-nav-item" data-step="3">
+          <span class="step-nav-num">3</span>
+          <span class="step-nav-text">Coordonnées</span>
+        </div>
+      </div>
+
+      <form id="bookingPartnershipForm" class="booking-form-wizard">
+        <!-- ÉTAPE 1 : TYPOLOGIE DE COLLABORATION -->
+        <div class="wizard-step active" id="wizardStep1">
+          <h3 class="step-heading">Quelle est la nature de votre projet ?</h3>
+          <p class="step-subheading">Sélectionnez le format principal de collaboration souhaité.</p>
+
+          <div class="type-options-grid">
+            <label class="type-card">
+              <input type="radio" name="projectType" value="marques" checked />
+              <div class="type-card-inner">
+                <span class="type-badge">BRAND CONTENT</span>
+                <h4 class="type-name">Campagne de Marque & Égérie</h4>
+                <p class="type-desc">Placement de produit scénarisé, saga publicitaire, ambassadrice annuelle.</p>
+              </div>
+            </label>
+
+            <label class="type-card">
+              <input type="radio" name="projectType" value="cinema" />
+              <div class="type-card-inner">
+                <span class="type-badge">CINÉMA & SÉRIES</span>
+                <h4 class="type-name">Rôle Fiction ou Long-Métrage</h4>
+                <p class="type-desc">Proposition de scénario pour le grand écran, séries télévisées ou plateformes.</p>
+              </div>
+            </label>
+
+            <label class="type-card">
+              <input type="radio" name="projectType" value="studio" />
+              <div class="type-card-inner">
+                <span class="type-badge">STUDIO AUDIOVISUEL</span>
+                <h4 class="type-name">Production Déléguée & Tournage</h4>
+                <p class="type-desc">Prestation complète de tournage 4K, réalisation de spot ou régie à Libreville.</p>
+              </div>
+            </label>
+
+            <label class="type-card">
+              <input type="radio" name="projectType" value="scene" />
+              <div class="type-card-inner">
+                <span class="type-badge">ÉVÉNEMENTIEL</span>
+                <h4 class="type-name">Maîtresse de Cérémonie & Conférence</h4>
+                <p class="type-desc">Modération de galas internationaux, keynotes leadership et masterclasses.</p>
+              </div>
+            </label>
+          </div>
+
+          <div class="wizard-actions">
+            <button type="button" class="btn-wizard-next" id="btnStep1Next">
+              <span>Étape Suivante : Cadrage</span>
+              <span class="btn-arrow">→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 2 : CADRAGE & BUDGET -->
+        <div class="wizard-step" id="wizardStep2">
+          <h3 class="step-heading">Cadrage opérationnel & enveloppe indicative</h3>
+          <p class="step-subheading">Ces informations permettent de préparer une proposition calibrée.</p>
+
+          <div class="form-fields-grid">
+            <div class="form-field">
+              <label for="inputCompany">Nom de la Marque / Institution *</label>
+              <input type="text" id="inputCompany" name="company" placeholder="Ex: Groupe Télécom / Agence Internationale" required />
+            </div>
+
+            <div class="form-field">
+              <label for="inputTimeline">Période ou Échéance Clé *</label>
+              <input type="text" id="inputTimeline" name="timeline" placeholder="Ex: T2 2025 / Campagne Juin 2025" required />
+            </div>
+
+            <div class="form-field full-width">
+              <label>Fourchette Budgétaire Estimée (Indicative) *</label>
+              <div class="budget-options-row">
+                <label class="budget-pill">
+                  <input type="radio" name="budgetRange" value="< 2M FCFA" />
+                  <span>&lt; 2M FCFA</span>
+                </label>
+                <label class="budget-pill">
+                  <input type="radio" name="budgetRange" value="2M - 5M FCFA" checked />
+                  <span>2M – 5M FCFA</span>
+                </label>
+                <label class="budget-pill">
+                  <input type="radio" name="budgetRange" value="5M - 15M FCFA" />
+                  <span>5M – 15M FCFA</span>
+                </label>
+                <label class="budget-pill">
+                  <input type="radio" name="budgetRange" value="15M+ FCFA" />
+                  <span>15M+ FCFA (Annuel)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-actions space-between">
+            <button type="button" class="btn-wizard-prev" id="btnStep2Prev">
+              <span>← Retour</span>
+            </button>
+            <button type="button" class="btn-wizard-next" id="btnStep2Next">
+              <span>Étape Suivante : Vos Coordonnées</span>
+              <span class="btn-arrow">→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 3 : COORDONNÉES DIRECTES & ENVOI -->
+        <div class="wizard-step" id="wizardStep3">
+          <h3 class="step-heading">Vos coordonnées professionnelles</h3>
+          <p class="step-subheading">Un contact direct avec notre direction de partenariats.</p>
+
+          <div class="form-fields-grid">
+            <div class="form-field">
+              <label for="inputContactName">Votre Nom Complet & Rôle *</label>
+              <input type="text" id="inputContactName" name="contactName" placeholder="Ex: Jean-Marc Nguema (Directeur Commercial)" required />
+            </div>
+
+            <div class="form-field">
+              <label for="inputEmail">Email Professionnel *</label>
+              <input type="email" id="inputEmail" name="email" placeholder="contact@votre-entreprise.com" required />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="inputPhone">Téléphone / Numéro WhatsApp Professionnel *</label>
+              <input type="tel" id="inputPhone" name="phone" placeholder="+241 77 00 00 00 / +33 6 00 00 00 00" required />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="inputMessage">Brief succinct ou synopsis du projet</label>
+              <textarea id="inputMessage" name="message" rows="4" placeholder="Précisez vos objectifs, le ton recherché ou toute contrainte particulière..."></textarea>
+            </div>
+          </div>
+
+          <div class="wizard-actions space-between">
+            <button type="button" class="btn-wizard-prev" id="btnStep3Prev">
+              <span>← Retour</span>
+            </button>
+            <button type="submit" class="btn-submit-final" id="btnSubmitFinal">
+              <span>Transmettre la Demande Confidentielle</span>
+              <span class="btn-arrow">✓</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- ÉCRAN DE CONFIRMATION VIP -->
+      <div class="wizard-confirmation" id="wizardConfirmation" style="display: none;">
+        <div class="conf-icon-wrap">
+          <span class="conf-check">✦</span>
+        </div>
+        <span class="conf-tag">DEMANDE TRANSMISSE AVEC SUCCÈS</span>
+        <h3 class="conf-title">Merci pour votre confiance.</h3>
+        <p class="conf-desc">
+          Votre dossier de partenariat a été transmis au bureau de management d'Émeraude et de notre agence à Libreville. Un accusé de réception a été envoyé à votre adresse, et notre équipe vous recontactera sous <strong>48 heures ouvrées</strong> pour convenir d'un échange d'alignement.
+        </p>
+        <div class="conf-dossier-pill">
+          <span>Numéro de dossier :</span>
+          <strong id="confDossierId">EMR-2025-0842</strong>
+        </div>
+        <div class="conf-action">
+          <a href="#hero" class="btn-conf-home">Retourner à l'accueil</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Gestion du formulaire multipages en 3 étapes
+  const step1 = document.getElementById('wizardStep1');
+  const step2 = document.getElementById('wizardStep2');
+  const step3 = document.getElementById('wizardStep3');
+  const conf = document.getElementById('wizardConfirmation');
+
+  const btnStep1Next = document.getElementById('btnStep1Next');
+  const btnStep2Prev = document.getElementById('btnStep2Prev');
+  const btnStep2Next = document.getElementById('btnStep2Next');
+  const btnStep3Prev = document.getElementById('btnStep3Prev');
+  const form = document.getElementById('bookingPartnershipForm') as HTMLFormElement;
+
+  const stepNavItems = document.querySelectorAll('.step-nav-item');
+
+  const setStep = (stepNum: number) => {
+    step1?.classList.toggle('active', stepNum === 1);
+    step2?.classList.toggle('active', stepNum === 2);
+    step3?.classList.toggle('active', stepNum === 3);
+
+    stepNavItems.forEach((nav) => {
+      const num = parseInt(nav.getAttribute('data-step') || '1', 10);
+      nav.classList.toggle('active', num === stepNum);
+      nav.classList.toggle('completed', num < stepNum);
+    });
+  };
+
+  btnStep1Next?.addEventListener('click', () => setStep(2));
+  btnStep2Prev?.addEventListener('click', () => setStep(1));
+  btnStep2Next?.addEventListener('click', () => {
+    const company = (document.getElementById('inputCompany') as HTMLInputElement)?.value;
+    if (!company) {
+      alert('Veuillez préciser le nom de votre marque ou entreprise.');
+      return;
+    }
+    setStep(3);
+  });
+  btnStep3Prev?.addEventListener('click', () => setStep(2));
+
+  // Soumission finale
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    form.style.display = 'none';
+    if (conf) {
+      conf.style.display = 'flex';
+      const randomId = `EMR-2025-${Math.floor(1000 + Math.random() * 9000)}`;
+      const dossierEl = document.getElementById('confDossierId');
+      if (dossierEl) dossierEl.textContent = randomId;
+      conf.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+  // Présélection de catégorie depuis le tiroir
+  window.addEventListener('emeraude:select-booking-category', ((e: CustomEvent) => {
+    const cat = e.detail?.category;
+    if (cat) {
+      const radio = document.querySelector(`input[name="projectType"][value="${cat}"]`) as HTMLInputElement;
+      if (radio) radio.checked = true;
+    }
+  }) as EventListener);
+</script>
+
+<style>
+  .emeraude-booking-section {
+    position: relative;
+    padding: 8rem 2.5rem;
+    background: linear-gradient(180deg, #030806 0%, #051812 50%, #030806 100%);
+    border-top: 1px solid rgba(16, 185, 129, 0.12);
+  }
+
+  .booking-container {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .booking-header {
+    text-align: center;
+    max-width: 780px;
+    margin: 0 auto 4rem;
+  }
+
+  .booking-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(2.25rem, 4vw, 3.8rem);
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+  }
+
+  .booking-subheadline {
+    font-size: 1.05rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  /* Card */
+  .booking-card {
+    background: #061812;
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  @media (min-width: 768px) {
+    .booking-card {
+      padding: 3.5rem 4rem;
+    }
+  }
+
+  /* Indicateur d'étapes */
+  .booking-steps-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 3.5rem;
+  }
+
+  .step-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    opacity: 0.45;
+    transition: opacity 0.3s ease;
+  }
+
+  .step-nav-item.active {
+    opacity: 1;
+  }
+
+  .step-nav-item.completed {
+    opacity: 0.85;
+  }
+
+  .step-nav-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .step-nav-item.active .step-nav-num {
+    background: var(--color-emeraude-primary);
+    color: #030806;
+    border-color: var(--color-emeraude-primary);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+  }
+
+  .step-nav-item.completed .step-nav-num {
+    background: var(--color-gold-primary);
+    color: #030806;
+    border-color: var(--color-gold-primary);
+  }
+
+  .step-nav-text {
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #ffffff;
+  }
+
+  .step-nav-connector {
+    width: 30px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Wizard Steps */
+  .wizard-step {
+    display: none;
+    flex-direction: column;
+    animation: fadeInStep 0.4s ease forwards;
+  }
+
+  .wizard-step.active {
+    display: flex;
+  }
+
+  @keyframes fadeInStep {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-heading {
+    font-family: var(--font-serif);
+    font-size: clamp(1.6rem, 2.5vw, 2.25rem);
+    font-weight: 400;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  .step-subheading {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  /* Options Type Grid */
+  .type-options-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .type-options-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .type-card {
+    cursor: pointer;
+    display: block;
+  }
+
+  .type-card input {
+    display: none;
+  }
+
+  .type-card-inner {
+    background: rgba(4, 16, 12, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 1.75rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.25s ease;
+  }
+
+  .type-card:hover .type-card-inner {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(8, 26, 20, 0.85);
+  }
+
+  .type-card input:checked + .type-card-inner {
+    border-color: var(--color-gold-primary);
+    background: rgba(13, 26, 20, 0.95);
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
+  }
+
+  .type-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--color-emeraude-primary);
+    display: inline-block;
+    margin-bottom: 0.5rem;
+  }
+
+  .type-name {
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.4rem;
+  }
+
+  .type-desc {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    line-height: 1.45;
+  }
+
+  /* Form Fields */
+  .form-fields-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .form-fields-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .form-field.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .form-field label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #cbd5e1;
+  }
+
+  .form-field input,
+  .form-field textarea {
+    background: rgba(4, 16, 12, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 0.85rem 1.15rem;
+    color: #ffffff;
+    font-size: 0.9rem;
+    outline: none;
+    font-family: var(--font-sans);
+    transition: border-color 0.25s ease;
+  }
+
+  .form-field input:focus,
+  .form-field textarea:focus {
+    border-color: var(--color-gold-primary);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+  }
+
+  /* Budget Pills */
+  .budget-options-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 768px) {
+    .budget-options-row {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .budget-pill {
+    cursor: pointer;
+    display: block;
+  }
+
+  .budget-pill input {
+    display: none;
+  }
+
+  .budget-pill span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+    background: rgba(4, 16, 12, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    transition: all 0.25s ease;
+    text-align: center;
+  }
+
+  .budget-pill:hover span {
+    border-color: rgba(212, 175, 55, 0.4);
+    color: #ffffff;
+  }
+
+  .budget-pill input:checked + span {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--color-gold-primary);
+    color: var(--color-gold-light);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+  }
+
+  /* Actions */
+  .wizard-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding-top: 1rem;
+  }
+
+  .wizard-actions.space-between {
+    justify-content: space-between;
+  }
+
+  .btn-wizard-next,
+  .btn-submit-final {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, #d4af37 0%, #aa8528 100%);
+    color: #030806;
+    padding: 0.95rem 2.25rem;
+    border-radius: 9999px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.88rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.35);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .btn-wizard-next:hover,
+  .btn-submit-final:hover {
+    background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(212, 175, 55, 0.55);
+  }
+
+  .btn-wizard-prev {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #cbd5e1;
+    padding: 0.85rem 1.75rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .btn-wizard-prev:hover {
+    border-color: #ffffff;
+    color: #ffffff;
+  }
+
+  /* Écran Confirmation VIP */
+  .wizard-confirmation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1rem;
+    animation: fadeInStep 0.5s ease forwards;
+  }
+
+  .conf-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.15);
+    border: 2px solid var(--color-emeraude-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+  }
+
+  .conf-check {
+    font-size: 1.75rem;
+    color: var(--color-gold-primary);
+  }
+
+  .conf-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--color-emeraude-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .conf-title {
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 3.5vw, 2.75rem);
+    font-weight: 400;
+    color: #ffffff;
+    margin-bottom: 1rem;
+  }
+
+  .conf-desc {
+    font-size: 1.05rem;
+    color: #cbd5e1;
+    max-width: 640px;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+
+  .conf-desc strong {
+    color: var(--color-gold-light);
+  }
+
+  .conf-dossier-pill {
+    background: rgba(4, 16, 12, 0.85);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    padding: 0.65rem 1.5rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    margin-bottom: 2.5rem;
+  }
+
+  .conf-dossier-pill strong {
+    font-family: monospace;
+    color: var(--color-gold-primary);
+    letter-spacing: 0.05em;
+  }
+
+  .btn-conf-home {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    padding: 0.85rem 2rem;
+    border-radius: 9999px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    transition: all 0.25s ease;
+  }
+
+  .btn-conf-home:hover {
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.5);
+  }
+</style>

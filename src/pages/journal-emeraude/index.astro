@@ -1,0 +1,53 @@
+---
+// index.astro - Page officielle isolée "Le Journal d'Émeraude"
+import EmeraudeLayout from '../../layouts/EmeraudeLayout.astro';
+import Header from '../../components/journal-emeraude/Header.astro';
+import Hero from '../../components/journal-emeraude/Hero.astro';
+import Manifesto from '../../components/journal-emeraude/Manifesto.astro';
+import DeviceFormats from '../../components/journal-emeraude/DeviceFormats.astro';
+import Showcase from '../../components/journal-emeraude/Showcase.astro';
+import ProjectDrawer from '../../components/journal-emeraude/ProjectDrawer.astro';
+import AgencyStudio from '../../components/journal-emeraude/AgencyStudio.astro';
+import BrandHub from '../../components/journal-emeraude/BrandHub.astro';
+import Endorsements from '../../components/journal-emeraude/Endorsements.astro';
+import BookingFunnel from '../../components/journal-emeraude/BookingFunnel.astro';
+import Footer from '../../components/journal-emeraude/Footer.astro';
+---
+
+<EmeraudeLayout
+  title="Le Journal d'Émeraude — Martine Myphe Lomba | Actrice, Voix Culturelle & Agence Média"
+  description="Plateforme officielle de Martine Myphe Lomba (Émeraude) et du Studio Le Journal d'Émeraude. Projets cinématographiques, collaborations de marques de prestige et booking partenariats."
+>
+  <!-- 00. Navigation Haute Couture Dépolie -->
+  <Header />
+
+  <!-- 01. Showreel Plein Écran & Distorsion WebGL Three.js -->
+  <Hero />
+
+  <!-- 02. Le Manifeste & L'Héritage (Scrollytelling Split-Screen) -->
+  <Manifesto />
+
+  <!-- 03. Formats & Écrans (Scroll-Activated iPhone Pro & Moniteur Cinéma) -->
+  <DeviceFormats />
+
+  <!-- 04. Showcase Hybride (Smörgåsbord Plein Écran vs Grille) -->
+  <Showcase />
+
+  <!-- Tiroir Latéral Immersif d'Études de Cas (Sans Rechargement) -->
+  <ProjectDrawer />
+
+  <!-- 05. L'Agence de Communication & Le Studio 4K Libreville (Inauguré en 2025) -->
+  <AgencyStudio />
+
+  <!-- 06. Le Brand Hub & Téléchargement du Media Kit 2025 -->
+  <BrandHub />
+
+  <!-- 07. Voix de l'Industrie & Recommandations Officielles -->
+  <Endorsements />
+
+  <!-- 08. Tunnel de Qualification des Partenariats en 3 Étapes -->
+  <BookingFunnel />
+
+  <!-- 09. Pied de Page Institutionnel & Signature de Conception -->
+  <Footer />
+</EmeraudeLayout>

@@ -1,0 +1,485 @@
+---
+// ProjectDrawer.astro - Tiroir immersif latéral d'étude de cas sans rechargement
+---
+
+<div class="project-drawer-overlay" id="projectDrawerOverlay" aria-hidden="true">
+  <!-- Backdrop flouté -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <!-- Panneau Coulissant -->
+  <aside class="drawer-panel" id="drawerPanel" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+    <!-- En-tête du Tiroir -->
+    <div class="drawer-header">
+      <div class="drawer-meta-badges">
+        <span class="drawer-category-badge" id="drawerCategory">CATÉGORIE</span>
+        <span class="drawer-year-badge" id="drawerYear">2024</span>
+      </div>
+
+      <button type="button" class="btn-drawer-close" id="btnDrawerClose" aria-label="Fermer l'étude de cas" data-cursor="FERMER">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Corps Défilant du Tiroir -->
+    <div class="drawer-body">
+      <!-- Média Phare / Vidéo -->
+      <div class="drawer-media-wrap">
+        <img src="" alt="" class="drawer-hero-img" id="drawerImage" />
+        <div class="drawer-media-gradient"></div>
+        <div class="drawer-client-pill" id="drawerClientPill">
+          <span class="pill-label">COMMANDITAIRE / CADRE :</span>
+          <span class="pill-value" id="drawerClient">Client Name</span>
+        </div>
+      </div>
+
+      <!-- Titres & Rôle -->
+      <div class="drawer-titles-wrap">
+        <div class="drawer-role-tag" id="drawerRole">Rôle d'Émeraude</div>
+        <h2 class="drawer-main-title" id="drawerTitle">Titre du Projet</h2>
+        <p class="drawer-subtitle" id="drawerSubtitle">Sous-titre descriptif</p>
+      </div>
+
+      <!-- Métriques d'Impact Bento -->
+      <div class="drawer-metrics-bento">
+        <div class="drawer-metric-card">
+          <span class="metric-val" id="drawerMetric1">—</span>
+          <span class="metric-lbl">Audience & Reach</span>
+        </div>
+        <div class="drawer-metric-card">
+          <span class="metric-val" id="drawerMetric2">—</span>
+          <span class="metric-lbl">Engagement Direct</span>
+        </div>
+        <div class="drawer-metric-card">
+          <span class="metric-val" id="drawerMetric3">—</span>
+          <span class="metric-lbl">Retombée Stratégique</span>
+        </div>
+      </div>
+
+      <!-- Récit Détaillé & Rôle d'Émeraude -->
+      <div class="drawer-narrative-section">
+        <h3 class="narrative-heading">Synopsis & Contexte</h3>
+        <p class="narrative-text" id="drawerSynopsis">Description...</p>
+
+        <h3 class="narrative-heading">Impact & Exécution Stratégique</h3>
+        <p class="narrative-text" id="drawerFullStory">Histoire complète...</p>
+      </div>
+
+      <!-- Tags & Thématiques -->
+      <div class="drawer-tags-wrap" id="drawerTagsContainer"></div>
+
+      <!-- Action de Conversion Directe -->
+      <div class="drawer-cta-box">
+        <div class="cta-box-text">
+          <h4 class="cta-box-title">Intéressé par une collaboration similaire ?</h4>
+          <p class="cta-box-desc">Réservez un cadrage stratégique avec l'équipe de management d'Émeraude.</p>
+        </div>
+        <button type="button" class="btn-drawer-action" id="btnDrawerBookAction">
+          <span>Initier ce projet</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+  // Gestion du tiroir d'études de cas
+  const overlay = document.getElementById('projectDrawerOverlay');
+  const panel = document.getElementById('drawerPanel');
+  const backdrop = document.getElementById('drawerBackdrop');
+  const closeBtn = document.getElementById('btnDrawerClose');
+  const bookActionBtn = document.getElementById('btnDrawerBookAction');
+
+  const drawerCategory = document.getElementById('drawerCategory');
+  const drawerYear = document.getElementById('drawerYear');
+  const drawerImage = document.getElementById('drawerImage') as HTMLImageElement;
+  const drawerClient = document.getElementById('drawerClient');
+  const drawerRole = document.getElementById('drawerRole');
+  const drawerTitle = document.getElementById('drawerTitle');
+  const drawerSubtitle = document.getElementById('drawerSubtitle');
+  const drawerMetric1 = document.getElementById('drawerMetric1');
+  const drawerMetric2 = document.getElementById('drawerMetric2');
+  const drawerMetric3 = document.getElementById('drawerMetric3');
+  const drawerSynopsis = document.getElementById('drawerSynopsis');
+  const drawerFullStory = document.getElementById('drawerFullStory');
+  const drawerTagsContainer = document.getElementById('drawerTagsContainer');
+
+  let activeProjectCategory = '';
+
+  const openDrawer = (project: any) => {
+    if (!overlay || !panel) return;
+
+    activeProjectCategory = project.category;
+    if (drawerCategory) drawerCategory.textContent = project.categoryLabel || project.category;
+    if (drawerYear) drawerYear.textContent = project.year || '2024';
+    if (drawerImage) {
+      drawerImage.src = project.heroImage;
+      drawerImage.alt = project.title;
+    }
+    if (drawerClient) drawerClient.textContent = project.clientOrDirector;
+    if (drawerRole) drawerRole.textContent = project.role;
+    if (drawerTitle) drawerTitle.textContent = project.title;
+    if (drawerSubtitle) drawerSubtitle.textContent = project.subtitle;
+
+    if (drawerMetric1) drawerMetric1.textContent = project.metrics?.views || '—';
+    if (drawerMetric2) drawerMetric2.textContent = project.metrics?.engagement || '—';
+    if (drawerMetric3) drawerMetric3.textContent = project.metrics?.impact || '—';
+
+    if (drawerSynopsis) drawerSynopsis.textContent = project.synopsis;
+    if (drawerFullStory) drawerFullStory.textContent = project.fullStory;
+
+    if (drawerTagsContainer) {
+      drawerTagsContainer.innerHTML = '';
+      project.tags?.forEach((t: string) => {
+        const span = document.createElement('span');
+        span.className = 'drawer-tag';
+        span.textContent = `#${t}`;
+        drawerTagsContainer.appendChild(span);
+      });
+    }
+
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeDrawer = () => {
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  };
+
+  closeBtn?.addEventListener('click', closeDrawer);
+  backdrop?.addEventListener('click', closeDrawer);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay?.classList.contains('active')) {
+      closeDrawer();
+    }
+  });
+
+  // Action CTA vers le formulaire de contact
+  bookActionBtn?.addEventListener('click', () => {
+    closeDrawer();
+    const contactSection = document.getElementById('partenariats');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+      // Déclencher un événement pour présélectionner le bon type
+      window.dispatchEvent(new CustomEvent('emeraude:select-booking-category', {
+        detail: { category: activeProjectCategory }
+      }));
+    }
+  });
+
+  // Écoute des événements d'ouverture depuis la vitrine
+  window.addEventListener('emeraude:open-project', ((e: CustomEvent) => {
+    openDrawer(e.detail.project);
+  }) as EventListener);
+</script>
+
+<style>
+  .project-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    justify-content: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .project-drawer-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Backdrop flou */
+  .drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(3, 8, 6, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Panneau coulissant */
+  .drawer-panel {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 680px;
+    height: 100vh;
+    background: #061812;
+    border-left: 1px solid rgba(16, 185, 129, 0.2);
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+  }
+
+  .project-drawer-overlay.active .drawer-panel {
+    transform: translateX(0);
+  }
+
+  /* Header */
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(4, 16, 12, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 2;
+  }
+
+  .drawer-meta-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .drawer-category-badge {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: var(--color-emeraude-primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.85rem;
+    border-radius: 9999px;
+  }
+
+  .drawer-year-badge {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--color-gold-primary);
+    font-weight: 600;
+  }
+
+  .btn-drawer-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .btn-drawer-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: rotate(90deg);
+  }
+
+  /* Corps */
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* Image */
+  .drawer-media-wrap {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    background: #020604;
+  }
+
+  .drawer-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .drawer-media-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 50%, rgba(3, 8, 6, 0.85) 100%);
+  }
+
+  .drawer-client-pill {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(3, 8, 6, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.72rem;
+  }
+
+  .pill-label {
+    color: var(--color-gold-primary);
+    font-weight: 700;
+  }
+
+  .pill-value {
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  /* Titres */
+  .drawer-role-tag {
+    display: inline-block;
+    color: var(--color-emeraude-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .drawer-main-title {
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 3.5vw, 2.75rem);
+    font-weight: 400;
+    line-height: 1.15;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+  }
+
+  .drawer-subtitle {
+    font-size: 1.05rem;
+    color: var(--color-text-muted);
+  }
+
+  /* Bento Métriques */
+  .drawer-metrics-bento {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .drawer-metric-card {
+    background: rgba(4, 16, 12, 0.6);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .metric-val {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-gold-light);
+  }
+
+  .metric-lbl {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* Narratif */
+  .narrative-heading {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-gold-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .narrative-text {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+  }
+
+  /* Tags */
+  .drawer-tags-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  :global(.drawer-tag) {
+    font-size: 0.72rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-muted);
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+  }
+
+  /* CTA */
+  .drawer-cta-box {
+    background: linear-gradient(135deg, rgba(8, 26, 20, 0.95) 0%, rgba(13, 22, 17, 0.95) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 14px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .cta-box-title {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+  }
+
+  .cta-box-desc {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+
+  .btn-drawer-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #d4af37 0%, #aa8528 100%);
+    color: #030806;
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .btn-drawer-action:hover {
+    background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+  }
+</style>

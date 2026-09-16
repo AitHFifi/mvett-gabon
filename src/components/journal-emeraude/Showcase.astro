@@ -1,0 +1,887 @@
+---
+// Showcase.astro - Showcase hybride (Bascule Plein Écran Smörgåsbord / Grille Éditoriale)
+import { PROJECTS_DATA } from '../../data/journal-emeraude/content';
+---
+
+<section class="emeraude-showcase" id="showcase">
+  <!-- En-tête de Section & Contrôles -->
+  <div class="showcase-header-wrap">
+    <div class="showcase-title-block">
+      <div class="section-badge">
+        <span class="badge-num">04</span>
+        <span class="badge-separator">/</span>
+        <span class="badge-label">CENTRALISATION DES ŒUVRES & SHOWCASE HYBRIDE</span>
+      </div>
+      <h2 class="showcase-headline">
+        L'Empreinte Culturelle & Les Réalisations.
+      </h2>
+      <p class="showcase-subheadline">
+        Explorez les fictions cinématographiques, les sagas de marques et les chroniques ayant marqué le paysage médiatique africain.
+      </p>
+    </div>
+
+    <!-- Contrôles : Bascule de Vue (Cinéma Smörgåsbord vs Grille) & Filtres -->
+    <div class="showcase-controls-bar">
+      <!-- Toggle de Mode de Vue -->
+      <div class="view-mode-toggle" role="tablist" aria-label="Mode d'affichage des projets">
+        <button
+          type="button"
+          class="mode-btn active"
+          id="btnModeCinema"
+          role="tab"
+          aria-selected="true"
+          data-cursor="CINÉMA"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          <span>Plein Écran Cinéma</span>
+        </button>
+
+        <button
+          type="button"
+          class="mode-btn"
+          id="btnModeGrid"
+          role="tab"
+          aria-selected="false"
+          data-cursor="GRILLE"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span>Vue Grille Éditoriale</span>
+        </button>
+      </div>
+
+      <!-- Filtres par Catégorie -->
+      <div class="category-filters-bar" id="categoryFiltersBar">
+        <button type="button" class="filter-chip active" data-filter="all">Tous</button>
+        <button type="button" class="filter-chip" data-filter="cinema">Cinéma & Séries</button>
+        <button type="button" class="filter-chip" data-filter="marques">Campagnes de Marques</button>
+        <button type="button" class="filter-chip" data-filter="chroniques">Chroniques</button>
+        <button type="button" class="filter-chip" data-filter="diplomatie">Diplomatie & Osaka 2025</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VUE 1 : PLEIN ÉCRAN CINÉMA (Style Smörgåsbord) -->
+  <div class="view-cinema-container active" id="viewCinemaContainer">
+    <!-- Diapositive Active Plein Écran -->
+    <div class="cinema-stage" id="cinemaStage">
+      <div class="cinema-slide-backdrop">
+        <img
+          src={PROJECTS_DATA[0].heroImage}
+          alt={PROJECTS_DATA[0].title}
+          class="cinema-backdrop-img"
+          id="cinemaBackdropImg"
+        />
+        <div class="cinema-backdrop-overlay"></div>
+      </div>
+
+      <!-- Informations sur la diapositive active -->
+      <div class="cinema-slide-info">
+        <div class="cinema-meta-row">
+          <span class="cinema-cat" id="cinemaCurrentCat">{PROJECTS_DATA[0].categoryLabel}</span>
+          <span class="cinema-year" id="cinemaCurrentYear">{PROJECTS_DATA[0].year}</span>
+          <span class="cinema-client" id="cinemaCurrentClient">• {PROJECTS_DATA[0].clientOrDirector}</span>
+        </div>
+
+        <h3 class="cinema-title" id="cinemaCurrentTitle">{PROJECTS_DATA[0].title}</h3>
+        <p class="cinema-subtitle" id="cinemaCurrentSubtitle">{PROJECTS_DATA[0].subtitle}</p>
+
+        <div class="cinema-metrics-row">
+          <div class="metric-pill">
+            <span class="m-val" id="cinemaMetric1">{PROJECTS_DATA[0].metrics.views || '—'}</span>
+            <span class="m-lbl">Audience</span>
+          </div>
+          <div class="metric-pill">
+            <span class="m-val" id="cinemaMetric2">{PROJECTS_DATA[0].metrics.impact || '—'}</span>
+            <span class="m-lbl">Impact</span>
+          </div>
+        </div>
+
+        <div class="cinema-actions-row">
+          <button type="button" class="btn-open-study" id="btnOpenCurrentStudy" data-cursor="OUVRIR">
+            <span>Découvrir l'Étude de Cas</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Flèches -->
+      <div class="cinema-nav-arrows">
+        <button type="button" class="btn-arrow btn-prev" id="btnCinemaPrev" aria-label="Projet précédent">←</button>
+        <button type="button" class="btn-arrow btn-next" id="btnCinemaNext" aria-label="Projet suivant">→</button>
+      </div>
+    </div>
+
+    <!-- Ticker Horizontal des Projets en Bas (Inspiré de Smörgåsbord) -->
+    <div class="cinema-ticker-bar" id="cinemaTickerBar">
+      <div class="ticker-scroll-track" id="tickerScrollTrack">
+        {PROJECTS_DATA.map((proj, idx) => (
+          <button
+            type="button"
+            class="ticker-item"
+            class:list={[{ active: idx === 0 }]}
+            data-index={idx}
+            data-category={proj.category}
+          >
+            <span class="ticker-index">0{idx + 1}</span>
+            <span class="ticker-name">{proj.title}</span>
+            <span class="ticker-sub">{proj.clientOrDirector}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- VUE 2 : GRILLE ÉDITORIALE (Cards & Hover Scrubbing) -->
+  <div class="view-grid-container" id="viewGridContainer">
+    <div class="editorial-grid">
+      {PROJECTS_DATA.map((proj, idx) => (
+        <article
+          class="project-card"
+          data-id={proj.id}
+          data-category={proj.category}
+          data-index={idx}
+          data-cursor="ÉTUDE"
+        >
+          <div class="card-media-wrap">
+            <img src={proj.heroImage} alt={proj.title} class="card-img" loading="lazy" />
+            <div class="card-gradient"></div>
+            
+            <div class="card-top-tags">
+              <span class="card-badge">{proj.categoryLabel}</span>
+              <span class="card-year">{proj.year}</span>
+            </div>
+
+            <div class="card-bottom-metric">
+              <span class="metric-highlight">{proj.metrics.views || proj.metrics.impact}</span>
+            </div>
+          </div>
+
+          <div class="card-info">
+            <span class="card-client">{proj.clientOrDirector}</span>
+            <h4 class="card-title">{proj.title}</h4>
+            <p class="card-desc">{proj.subtitle}</p>
+
+            <div class="card-footer-cta">
+              <span class="cta-link">Consulter la fiche</span>
+              <span class="cta-arrow">→</span>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  import { PROJECTS_DATA } from '../../data/journal-emeraude/content';
+
+  let currentCategory = 'all';
+  let activeIndex = 0;
+  let filteredProjects = [...PROJECTS_DATA];
+
+  // Sélecteurs
+  const btnModeCinema = document.getElementById('btnModeCinema');
+  const btnModeGrid = document.getElementById('btnModeGrid');
+  const viewCinema = document.getElementById('viewCinemaContainer');
+  const viewGrid = document.getElementById('viewGridContainer');
+  const filterChips = document.querySelectorAll('.filter-chip');
+  const tickerItems = document.querySelectorAll('.ticker-item');
+  const projectCards = document.querySelectorAll('.project-card');
+
+  // Éléments du mode cinéma
+  const cinemaBackdropImg = document.getElementById('cinemaBackdropImg') as HTMLImageElement;
+  const cinemaCurrentCat = document.getElementById('cinemaCurrentCat');
+  const cinemaCurrentYear = document.getElementById('cinemaCurrentYear');
+  const cinemaCurrentClient = document.getElementById('cinemaCurrentClient');
+  const cinemaCurrentTitle = document.getElementById('cinemaCurrentTitle');
+  const cinemaCurrentSubtitle = document.getElementById('cinemaCurrentSubtitle');
+  const cinemaMetric1 = document.getElementById('cinemaMetric1');
+  const cinemaMetric2 = document.getElementById('cinemaMetric2');
+  const btnOpenCurrentStudy = document.getElementById('btnOpenCurrentStudy');
+  const btnCinemaPrev = document.getElementById('btnCinemaPrev');
+  const btnCinemaNext = document.getElementById('btnCinemaNext');
+
+  // Bascule de Mode
+  btnModeCinema?.addEventListener('click', () => {
+    btnModeCinema.classList.add('active');
+    btnModeGrid?.classList.remove('active');
+    viewCinema?.classList.add('active');
+    viewGrid?.classList.remove('active');
+  });
+
+  btnModeGrid?.addEventListener('click', () => {
+    btnModeGrid.classList.add('active');
+    btnModeCinema?.classList.remove('active');
+    viewGrid?.classList.add('active');
+    viewCinema?.classList.remove('active');
+  });
+
+  // Mise à jour de la diapositive Cinéma
+  const updateCinemaSlide = (index: number) => {
+    const proj = filteredProjects[index];
+    if (!proj) return;
+
+    activeIndex = index;
+
+    if (cinemaBackdropImg) {
+      cinemaBackdropImg.style.opacity = '0.4';
+      setTimeout(() => {
+        cinemaBackdropImg.src = proj.heroImage;
+        cinemaBackdropImg.alt = proj.title;
+        cinemaBackdropImg.style.opacity = '1';
+      }, 200);
+    }
+
+    if (cinemaCurrentCat) cinemaCurrentCat.textContent = proj.categoryLabel;
+    if (cinemaCurrentYear) cinemaCurrentYear.textContent = proj.year;
+    if (cinemaCurrentClient) cinemaCurrentClient.textContent = `• ${proj.clientOrDirector}`;
+    if (cinemaCurrentTitle) cinemaCurrentTitle.textContent = proj.title;
+    if (cinemaCurrentSubtitle) cinemaCurrentSubtitle.textContent = proj.subtitle;
+    if (cinemaMetric1) cinemaMetric1.textContent = proj.metrics.views || '—';
+    if (cinemaMetric2) cinemaMetric2.textContent = proj.metrics.impact || '—';
+
+    // Ticker sync
+    tickerItems.forEach((item) => {
+      const itemIdx = parseInt(item.getAttribute('data-index') || '0', 10);
+      const isCurrent = PROJECTS_DATA[itemIdx]?.id === proj.id;
+      item.classList.toggle('active', isCurrent);
+      if (isCurrent) {
+        item.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    });
+  };
+
+  btnCinemaPrev?.addEventListener('click', () => {
+    const prevIdx = (activeIndex - 1 + filteredProjects.length) % filteredProjects.length;
+    updateCinemaSlide(prevIdx);
+  });
+
+  btnCinemaNext?.addEventListener('click', () => {
+    const nextIdx = (activeIndex + 1) % filteredProjects.length;
+    updateCinemaSlide(nextIdx);
+  });
+
+  // Clic sur un item du ticker en mode cinéma
+  tickerItems.forEach((item) => {
+    item.addEventListener('click', () => {
+      const idx = parseInt(item.getAttribute('data-index') || '0', 10);
+      const targetProj = PROJECTS_DATA[idx];
+      const filteredIdx = filteredProjects.findIndex((p) => p.id === targetProj.id);
+      if (filteredIdx !== -1) {
+        updateCinemaSlide(filteredIdx);
+      }
+    });
+  });
+
+  // Filtres
+  filterChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      filterChips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+
+      const filter = chip.getAttribute('data-filter') || 'all';
+      currentCategory = filter;
+
+      filteredProjects = filter === 'all'
+        ? [...PROJECTS_DATA]
+        : PROJECTS_DATA.filter((p) => p.category === filter);
+
+      // Grille filter
+      projectCards.forEach((card) => {
+        const cat = card.getAttribute('data-category');
+        const show = filter === 'all' || cat === filter;
+        (card as HTMLElement).style.display = show ? 'flex' : 'none';
+      });
+
+      // Ticker filter
+      tickerItems.forEach((item) => {
+        const cat = item.getAttribute('data-category');
+        const show = filter === 'all' || cat === filter;
+        (item as HTMLElement).style.display = show ? 'inline-flex' : 'none';
+      });
+
+      // Réinitialiser le slide cinéma
+      if (filteredProjects.length > 0) {
+        updateCinemaSlide(0);
+      }
+    });
+  });
+
+  // Ouverture du Tiroir (Drawer)
+  btnOpenCurrentStudy?.addEventListener('click', () => {
+    const proj = filteredProjects[activeIndex];
+    if (proj) {
+      window.dispatchEvent(new CustomEvent('emeraude:open-project', { detail: { project: proj } }));
+    }
+  });
+
+  projectCards.forEach((card) => {
+    card.addEventListener('click', () => {
+      const id = card.getAttribute('data-id');
+      const proj = PROJECTS_DATA.find((p) => p.id === id);
+      if (proj) {
+        window.dispatchEvent(new CustomEvent('emeraude:open-project', { detail: { project: proj } }));
+      }
+    });
+  });
+</script>
+
+<style>
+  .emeraude-showcase {
+    position: relative;
+    padding: 7rem 0 5rem;
+    background: #030806;
+    border-top: 1px solid rgba(16, 185, 129, 0.12);
+  }
+
+  /* Header Section */
+  .showcase-header-wrap {
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 0 2.5rem;
+    margin-bottom: 3.5rem;
+  }
+
+  .showcase-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(2.25rem, 4vw, 3.8rem);
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+  }
+
+  .showcase-subheadline {
+    font-size: 1.1rem;
+    color: var(--color-text-muted);
+    max-width: 780px;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+  }
+
+  /* Contrôles */
+  .showcase-controls-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Toggle Boutons Mode */
+  .view-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(8, 26, 20, 0.85);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 9999px;
+    padding: 0.3rem;
+  }
+
+  .mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    padding: 0.5rem 1.15rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .mode-btn.active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+  }
+
+  /* Filtres par Catégories */
+  .category-filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .filter-chip {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-muted);
+    padding: 0.45rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .filter-chip:hover {
+    color: #ffffff;
+    border-color: rgba(212, 175, 55, 0.4);
+  }
+
+  .filter-chip.active {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--color-gold-primary);
+    color: var(--color-gold-light);
+  }
+
+  /* VUE 1 : CINÉMA (SMÖRGÅSBORD) */
+  .view-cinema-container {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .view-cinema-container.active {
+    display: flex;
+  }
+
+  .cinema-stage {
+    position: relative;
+    width: 100%;
+    height: 75vh;
+    min-height: 520px;
+    max-height: 800px;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    padding: 3rem 2.5rem 6rem;
+  }
+
+  @media (min-width: 1024px) {
+    .cinema-stage {
+      padding: 4rem 4rem 6rem;
+    }
+  }
+
+  .cinema-slide-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  .cinema-backdrop-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.6) contrast(1.1);
+    transition: opacity 0.5s ease-in-out;
+  }
+
+  .cinema-backdrop-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(3, 8, 6, 0.3) 0%, transparent 40%, rgba(3, 8, 6, 0.95) 90%, #030806 100%),
+                radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+  }
+
+  .cinema-slide-info {
+    position: relative;
+    z-index: 5;
+    max-width: 840px;
+  }
+
+  .cinema-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .cinema-cat {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid var(--color-emeraude-primary);
+    color: #34d399;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.85rem;
+    border-radius: 9999px;
+  }
+
+  .cinema-year {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--color-gold-primary);
+    font-weight: 700;
+  }
+
+  .cinema-client {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+  }
+
+  .cinema-title {
+    font-family: var(--font-serif);
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    font-weight: 400;
+    line-height: 1.1;
+    color: #ffffff;
+    margin-bottom: 0.75rem;
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.9);
+  }
+
+  .cinema-subtitle {
+    font-size: 1.15rem;
+    color: #e2e8f0;
+    line-height: 1.5;
+    margin-bottom: 1.75rem;
+    max-width: 680px;
+  }
+
+  .cinema-metrics-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .metric-pill {
+    background: rgba(4, 16, 12, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    padding: 0.65rem 1.25rem;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .m-val {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--color-gold-light);
+  }
+
+  .m-lbl {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .btn-open-study {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    background: linear-gradient(135deg, #d4af37 0%, #aa8528 100%);
+    color: #030806;
+    padding: 0.9rem 2rem;
+    border-radius: 9999px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.88rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.35);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .btn-open-study:hover {
+    background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(212, 175, 55, 0.55);
+  }
+
+  /* Flèches */
+  .cinema-nav-arrows {
+    position: absolute;
+    right: 2.5rem;
+    bottom: 6rem;
+    z-index: 10;
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .btn-arrow {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(8, 26, 20, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .btn-arrow:hover {
+    background: var(--color-emeraude-primary);
+    border-color: var(--color-emeraude-primary);
+    transform: scale(1.08);
+  }
+
+  /* Ticker Horizontal (Inspiré de Smörgåsbord) */
+  .cinema-ticker-bar {
+    width: 100%;
+    background: rgba(4, 16, 12, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.25rem 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .cinema-ticker-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ticker-scroll-track {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0 2.5rem;
+    width: max-content;
+  }
+
+  .ticker-item {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    text-align: left;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+    opacity: 0.65;
+  }
+
+  .ticker-item:hover {
+    opacity: 1;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .ticker-item.active {
+    opacity: 1;
+    color: #ffffff;
+    background: rgba(16, 185, 129, 0.15);
+    border-left: 2px solid var(--color-emeraude-primary);
+  }
+
+  .ticker-index {
+    font-family: monospace;
+    font-size: 0.68rem;
+    color: var(--color-gold-primary);
+    font-weight: 700;
+  }
+
+  .ticker-name {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .ticker-sub {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  /* VUE 2 : GRILLE ÉDITORIALE */
+  .view-grid-container {
+    display: none;
+    max-width: 1380px;
+    margin: 0 auto;
+    padding: 0 2.5rem;
+  }
+
+  .view-grid-container.active {
+    display: block;
+  }
+
+  .editorial-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .editorial-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .editorial-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .project-card {
+    background: #061812;
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.4s ease;
+  }
+
+  .project-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  .card-media-wrap {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #020604;
+  }
+
+  .card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .project-card:hover .card-img {
+    transform: scale(1.08);
+  }
+
+  .card-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(3, 8, 6, 0.4) 0%, transparent 40%, rgba(3, 8, 6, 0.85) 100%);
+  }
+
+  .card-top-tags {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2;
+  }
+
+  .card-badge {
+    background: rgba(3, 8, 6, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: var(--color-emeraude-primary);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+  }
+
+  .card-year {
+    font-family: monospace;
+    font-size: 0.72rem;
+    color: var(--color-gold-primary);
+    font-weight: 700;
+    background: rgba(3, 8, 6, 0.8);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .card-bottom-metric {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    z-index: 2;
+  }
+
+  .metric-highlight {
+    background: rgba(8, 26, 20, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    color: var(--color-gold-light);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.75rem;
+    border-radius: 8px;
+  }
+
+  .card-info {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .card-client {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.35rem;
+  }
+
+  .card-title {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #ffffff;
+    line-height: 1.25;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-desc {
+    font-size: 0.85rem;
+    color: #94a39d;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    flex: 1;
+  }
+
+  .card-footer-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .cta-link {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-gold-primary);
+  }
+
+  .cta-arrow {
+    color: var(--color-gold-primary);
+    transition: transform 0.25s ease;
+  }
+
+  .project-card:hover .cta-arrow {
+    transform: translateX(4px);
+  }
+</style>

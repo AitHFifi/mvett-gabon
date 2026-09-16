@@ -1,0 +1,552 @@
+---
+// BrandHub.astro - Preuve sociale pour directeurs marketing & téléchargement qualifié du Media Kit
+import { METRICS_DATA, DEMOGRAPHICS } from '../../data/journal-emeraude/content';
+---
+
+<section class="emeraude-brand-hub" id="donnees">
+  <div class="hub-container">
+    <!-- En-tête de section -->
+    <div class="hub-header-wrap">
+      <div class="section-badge">
+        <span class="badge-num">04</span>
+        <span class="badge-separator">/</span>
+        <span class="badge-label">PREUVE SOCIALE & AUDIENCE QUALIFIÉE</span>
+      </div>
+      <h2 class="hub-headline">
+        La Puissance des Chiffres au Service de Votre Image de Marque.
+      </h2>
+      <p class="hub-subheadline">
+        Des métriques certifiées, une communauté engagée au Gabon et en diaspora, et une capacité démontrée à convertir l'attention en actes d'achat.
+      </p>
+    </div>
+
+    <!-- Bento Grid des 4 Indicateurs Majeurs -->
+    <div class="metrics-bento-grid">
+      {METRICS_DATA.map((item, idx) => (
+        <div class="bento-metric-card" class:list={[{ 'bento-highlight': idx === 0 }]}>
+          <div class="card-glow-bg"></div>
+          <div class="bento-top-row">
+            <span class="bento-trend-badge">{item.trend}</span>
+            <span class="bento-index">0{idx + 1}</span>
+          </div>
+
+          <div class="bento-value-wrap">
+            <span class="bento-num">{item.value}</span>
+          </div>
+
+          <h3 class="bento-label">{item.label}</h3>
+          <p class="bento-detail">{item.detail}</p>
+        </div>
+      ))}
+    </div>
+
+    <!-- Répartition Géographique & Démographique -->
+    <div class="demographics-panel">
+      <div class="demo-info-col">
+        <span class="demo-tag">RÉPARTITION GÉOGRAPHIQUE</span>
+        <h3 class="demo-title">Un Rayonnement Panafricain & Une Ancrage Local Massif</h3>
+        <p class="demo-desc">
+          Une audience majoritairement urbaine, active, connectée au quotidien et dotée d'un fort pouvoir d'achat dans les grandes métropoles africaines et européennes.
+        </p>
+      </div>
+
+      <div class="demo-bars-col">
+        {DEMOGRAPHICS.map((d) => (
+          <div class="demo-bar-item">
+            <div class="bar-header">
+              <span class="bar-label">{d.territory}</span>
+              <span class="bar-percent">{d.percent}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style={`width: ${d.percent};`}></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- CARTE TÉLÉCHARGEMENT MEDIA KIT 2025 (LEAD CAPTURE) -->
+    <div class="media-kit-download-box" id="mediaKitCard">
+      <div class="kit-content-left">
+        <div class="kit-badge">DOC OFFICIEL RÉSERVÉ AUX MARQUES & ANNONCEURS</div>
+        <h3 class="kit-title">Media Kit Intégral 2025 — Émeraude</h3>
+        <p class="kit-desc">
+          Consultez les fiches d'audience détaillées, les grilles tarifaires de partenariats, les cas d'études sectoriels et les spécifications techniques de notre studio.
+        </p>
+        <ul class="kit-features">
+          <li>✓ Statistiques certifiées TikTok, Meta & YouTube</li>
+          <li>✓ Grilles tarifaires de placement de produit & sagas</li>
+          <li>✓ Calendrier des disponibilités de tournage 2025</li>
+        </ul>
+      </div>
+
+      <div class="kit-form-right">
+        <form class="kit-quick-form" id="mediaKitForm">
+          <h4 class="form-title">Recevoir le Media Kit (PDF HD)</h4>
+          <p class="form-sub">Envoi instantané par email professionnel</p>
+
+          <div class="input-group">
+            <label for="kitName">Votre Nom & Fonction</label>
+            <input type="text" id="kitName" placeholder="Ex: Aïssatou Diallo (Directrice Marketing)" required />
+          </div>
+
+          <div class="input-group">
+            <label for="kitCompany">Marque ou Organisation</label>
+            <input type="text" id="kitCompany" placeholder="Ex: Groupe Télécom / Agence Médias" required />
+          </div>
+
+          <div class="input-group">
+            <label for="kitEmail">Email Professionnel</label>
+            <input type="email" id="kitEmail" placeholder="nom@entreprise.com" required />
+          </div>
+
+          <button type="submit" class="btn-submit-kit" id="btnSubmitKit">
+            <span>Télécharger le PDF Immédiatement</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </button>
+
+          <div class="kit-success-feedback" id="kitSuccessFeedback" style="display: none;">
+            <span class="success-icon">✓</span>
+            <div class="success-text">
+              <strong>Téléchargement lancé avec succès !</strong>
+              <span>Le Media Kit 2025 a été généré pour votre organisation.</span>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Gestion du formulaire de téléchargement du Media Kit
+  const form = document.getElementById('mediaKitForm');
+  const feedback = document.getElementById('kitSuccessFeedback');
+  const submitBtn = document.getElementById('btnSubmitKit');
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (submitBtn) {
+      submitBtn.innerHTML = '<span>Génération du PDF...</span>';
+      submitBtn.setAttribute('disabled', 'true');
+    }
+
+    setTimeout(() => {
+      if (submitBtn) submitBtn.style.display = 'none';
+      if (feedback) feedback.style.display = 'flex';
+
+      // Simulation de téléchargement du fichier PDF
+      const blob = new Blob([
+        "LE JOURNAL D'EMERAUDE - MEDIA KIT OFFICIEL 2025\n\nMartine Myphe Lomba\nActrice, Chroniqueuse et Fondatrice de Studio\n\nAudience Consolidée: 2.5M+\nAffinité Féminine: 84%\n\nContact Management: alloghofrederic9@gmail.com\nDéveloppé par Frederic ALLOGHO (https://www.allogho.me/)"
+      ], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "Media-Kit-2025-Le-Journal-d-Emeraude.txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }, 1200);
+  });
+
+  // Liaison avec le bouton de header Media Kit
+  const headerMediaKitBtn = document.getElementById('openMediaKitBtn');
+  headerMediaKitBtn?.addEventListener('click', () => {
+    const card = document.getElementById('mediaKitCard');
+    card?.scrollIntoView({ behavior: 'smooth' });
+    const input = document.getElementById('kitName');
+    setTimeout(() => input?.focus(), 600);
+  });
+</script>
+
+<style>
+  .emeraude-brand-hub {
+    position: relative;
+    padding: 8rem 2.5rem;
+    background: #030806;
+    border-top: 1px solid rgba(16, 185, 129, 0.12);
+  }
+
+  .hub-container {
+    max-width: 1380px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .hub-header-wrap {
+    max-width: 980px;
+    margin-bottom: 4.5rem;
+  }
+
+  .hub-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(2.25rem, 4vw, 3.8rem);
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+  }
+
+  .hub-subheadline {
+    font-size: 1.1rem;
+    color: var(--color-text-muted);
+    line-height: 1.65;
+  }
+
+  /* Bento Grid */
+  .metrics-bento-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 3.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .metrics-bento-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .metrics-bento-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .bento-metric-card {
+    position: relative;
+    background: #061812;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 18px;
+    padding: 2.25rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .bento-metric-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(212, 175, 55, 0.4);
+  }
+
+  .bento-metric-card.bento-highlight {
+    background: linear-gradient(135deg, #09261c 0%, #061812 100%);
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+
+  .card-glow-bg {
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .bento-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .bento-trend-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--color-gold-light);
+    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+  }
+
+  .bento-index {
+    font-family: monospace;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .bento-value-wrap {
+    margin-bottom: 0.5rem;
+  }
+
+  .bento-num {
+    font-family: var(--font-heading);
+    font-size: clamp(2.5rem, 3.5vw, 3.4rem);
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .bento-label {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-gold-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .bento-detail {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+
+  /* Panel Démographie */
+  .demographics-panel {
+    background: rgba(8, 26, 20, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 3rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    align-items: center;
+    margin-bottom: 4rem;
+  }
+
+  @media (min-width: 1024px) {
+    .demographics-panel {
+      grid-template-columns: 5fr 7fr;
+      gap: 4rem;
+    }
+  }
+
+  .demo-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--color-emeraude-primary);
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+
+  .demo-title {
+    font-family: var(--font-serif);
+    font-size: 1.85rem;
+    font-weight: 500;
+    color: #ffffff;
+    line-height: 1.25;
+    margin-bottom: 0.75rem;
+  }
+
+  .demo-desc {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .demo-bars-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .bar-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .bar-label {
+    color: #e2e8f0;
+    font-weight: 500;
+  }
+
+  .bar-percent {
+    font-family: monospace;
+    color: var(--color-gold-primary);
+    font-weight: 700;
+  }
+
+  .bar-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981 0%, #d4af37 100%);
+    border-radius: 9999px;
+  }
+
+  /* MEDIA KIT DOWNLOAD BOX */
+  .media-kit-download-box {
+    background: linear-gradient(135deg, rgba(8, 26, 20, 0.95) 0%, rgba(13, 30, 23, 0.95) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 20px;
+    padding: 3.5rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3.5rem;
+    align-items: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  }
+
+  @media (min-width: 1024px) {
+    .media-kit-download-box {
+      grid-template-columns: 6fr 6fr;
+      gap: 4rem;
+    }
+  }
+
+  .kit-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--color-gold-light);
+    display: inline-block;
+    background: rgba(212, 175, 55, 0.15);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    padding: 0.3rem 0.85rem;
+    border-radius: 9999px;
+    margin-bottom: 1.25rem;
+  }
+
+  .kit-title {
+    font-family: var(--font-serif);
+    font-size: clamp(1.85rem, 3vw, 2.6rem);
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+
+  .kit-desc {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .kit-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    font-size: 0.88rem;
+    color: var(--color-gold-light);
+  }
+
+  /* Formulaire */
+  .kit-quick-form {
+    background: rgba(3, 8, 6, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 2.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+  }
+
+  .form-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .form-sub {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-top: -0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .input-group label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #cbd5e1;
+  }
+
+  .input-group input {
+    background: rgba(8, 26, 20, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: #ffffff;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.25s ease;
+  }
+
+  .input-group input:focus {
+    border-color: var(--color-gold-primary);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+  }
+
+  .btn-submit-kit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    background: linear-gradient(135deg, #d4af37 0%, #aa8528 100%);
+    color: #030806;
+    padding: 0.9rem 1.5rem;
+    border-radius: 9999px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-top: 0.5rem;
+  }
+
+  .btn-submit-kit:hover {
+    background: linear-gradient(135deg, #f3e5ab 0%, #d4af37 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+  }
+
+  .kit-success-feedback {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid var(--color-emeraude-primary);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .success-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--color-emeraude-primary);
+    color: #030806;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+  }
+
+  .success-text {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8rem;
+    color: #f8faf9;
+  }
+
+  .success-text strong {
+    color: #34d399;
+  }
+</style>

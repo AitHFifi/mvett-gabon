@@ -1,0 +1,329 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Le Journal d'Émeraude — Martine Myphe Lomba | Actrice, Voix Culturelle & Agence Média",
+  description = "Plateforme officielle de Martine Myphe Lomba (Émeraude) et du Studio Le Journal d'Émeraude. Projets cinématographiques, collaborations de marques de prestige et booking partenariats."
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    <!-- Polices Typographiques : Cormorant Garamond, Plus Jakarta Sans, Cinzel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="emeraude-body">
+    <!-- Curseur Personnalisé Aimanté -->
+    <div id="emeraudeCursor" class="custom-cursor" aria-hidden="true">
+      <div class="cursor-dot"></div>
+      <div class="cursor-ring">
+        <span class="cursor-label"></span>
+      </div>
+    </div>
+
+    <!-- Conteneur Principal -->
+    <div class="emeraude-wrapper">
+      <slot />
+    </div>
+
+    <!-- Script de gestion du défilement fluide Lenis, GSAP & curseur magnétique -->
+    <script>
+      import Lenis from 'lenis';
+      import { gsap } from 'gsap';
+      import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      // 1. Initialisation du Smooth Inertia Scrolling Lenis
+      const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        orientation: 'vertical',
+        gestureOrientation: 'vertical',
+        smoothWheel: true,
+        wheelMultiplier: 1.0,
+        touchMultiplier: 2.0,
+        infinite: false,
+      });
+
+      // Synchronisation de Lenis avec ScrollTrigger
+      lenis.on('scroll', ScrollTrigger.update);
+
+      gsap.ticker.add((time) => {
+        lenis.raf(time * 1000);
+      });
+
+      gsap.ticker.lagSmoothing(0);
+
+      // Gestion des ancres internes avec Lenis
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener('click', (e) => {
+          const href = anchor.getAttribute('href');
+          if (href && href !== '#') {
+            const target = document.querySelector(href);
+            if (target) {
+              e.preventDefault();
+              lenis.scrollTo(target as HTMLElement, { offset: -20, duration: 1.4 });
+            }
+          }
+        });
+      });
+
+      // 2. Curseur Magnétique Personnalisé Haute Couture
+      const cursor = document.getElementById('emeraudeCursor');
+      const cursorDot = cursor?.querySelector('.cursor-dot') as HTMLElement;
+      const cursorRing = cursor?.querySelector('.cursor-ring') as HTMLElement;
+      const cursorLabel = cursor?.querySelector('.cursor-label') as HTMLElement;
+
+      let mouseX = window.innerWidth / 2;
+      let mouseY = window.innerHeight / 2;
+      let ringX = mouseX;
+      let ringY = mouseY;
+
+      if (cursor && window.matchMedia('(pointer: fine)').matches) {
+        window.addEventListener('mousemove', (e) => {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+          if (cursorDot) {
+            cursorDot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
+          }
+        });
+
+        const renderCursor = () => {
+          ringX += (mouseX - ringX) * 0.15;
+          ringY += (mouseY - ringY) * 0.15;
+          if (cursorRing) {
+            cursorRing.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
+          }
+          requestAnimationFrame(renderCursor);
+        };
+        renderCursor();
+
+        const updateHoverState = () => {
+          document.querySelectorAll('[data-cursor]').forEach((el) => {
+            el.addEventListener('mouseenter', () => {
+              const label = el.getAttribute('data-cursor') || '';
+              cursor.classList.add('cursor-active');
+              if (label && cursorLabel) {
+                cursorLabel.textContent = label;
+                cursor.classList.add('has-label');
+              }
+            });
+            el.addEventListener('mouseleave', () => {
+              cursor.classList.remove('cursor-active', 'has-label');
+              if (cursorLabel) cursorLabel.textContent = '';
+            });
+          });
+        };
+
+        updateHoverState();
+        document.addEventListener('emeraude:content-updated', updateHoverState);
+      }
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --color-bg-deep: #04100c;
+    --color-bg-card: #081a14;
+    --color-bg-card-hover: #0c251c;
+    --color-obsidian: #030806;
+    
+    --color-emeraude-primary: #10b981;
+    --color-emeraude-deep: #047857;
+    --color-emeraude-glow: rgba(16, 185, 129, 0.25);
+    
+    --color-gold-primary: #d4af37;
+    --color-gold-light: #f3e5ab;
+    --color-gold-glow: rgba(212, 175, 55, 0.2);
+    
+    --color-text-white: #f8faf9;
+    --color-text-muted: #94a39d;
+    --color-text-dark: #4b5e56;
+
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-heading: 'Cinzel', serif;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body.emeraude-body {
+    background-color: var(--color-bg-deep);
+    color: var(--color-text-white);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html.lenis, html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  /* Scrollbar haute couture dorée & émeraude */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #030806;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #10b981 0%, #d4af37 100%);
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #d4af37;
+  }
+
+  /* Curseur sur mesure */
+  .custom-cursor {
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    overflow: hidden;
+  }
+
+  .cursor-dot {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    background: #d4af37;
+    border-radius: 50%;
+    pointer-events: none;
+    transition: transform 0.05s ease-out;
+  }
+
+  .cursor-ring {
+    position: absolute;
+    top: -24px;
+    left: -24px;
+    width: 48px;
+    height: 48px;
+    border: 1.5px solid rgba(212, 175, 55, 0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+                height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.3s ease,
+                background-color 0.3s ease;
+  }
+
+  .cursor-label {
+    font-family: var(--font-sans);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #030806;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .custom-cursor.cursor-active .cursor-ring {
+    width: 72px;
+    height: 72px;
+    top: -36px;
+    left: -36px;
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    backdrop-filter: blur(2px);
+  }
+
+  .custom-cursor.has-label .cursor-ring {
+    width: 84px;
+    height: 84px;
+    top: -42px;
+    left: -42px;
+    background: #d4af37;
+    border-color: #f3e5ab;
+  }
+
+  .custom-cursor.has-label .cursor-label {
+    opacity: 1;
+  }
+
+  @media (pointer: coarse) {
+    .custom-cursor {
+      display: none !important;
+    }
+  }
+
+  /* Typographie globale */
+  h1, h2, h3, .font-serif {
+    font-family: var(--font-serif);
+  }
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  .font-sans {
+    font-family: var(--font-sans);
+  }
+
+  /* Utilitaires visuels */
+  .text-gold {
+    color: var(--color-gold-primary);
+  }
+  .text-emeraude {
+    color: var(--color-emeraude-primary);
+  }
+  .bg-glass {
+    background: rgba(8, 26, 20, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+  }
+  .bg-glass-gold {
+    background: rgba(13, 22, 17, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+  }
+  .glow-emeraude {
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
+  }
+  .glow-gold {
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+  }
+</style>

@@ -1,0 +1,385 @@
+---
+// Manifesto.astro - Split-screen scrollytelling avec la vraie photo officielle d'Émeraude
+import { MANIFESTO_DATA } from '../../data/journal-emeraude/content';
+---
+
+<section class="emeraude-manifesto" id="manifeste">
+  <div class="manifesto-container">
+    <!-- Colonne Gauche : Vraie Photographie Officielle Sticky -->
+    <div class="manifesto-visual-col">
+      <div class="sticky-portrait-frame" data-cursor="ÉMERAUDE">
+        <div class="portrait-glow"></div>
+        <img
+          src={MANIFESTO_DATA.portraitImage}
+          alt={MANIFESTO_DATA.name}
+          class="portrait-img"
+          loading="lazy"
+        />
+        <div class="portrait-overlay">
+          <div class="portrait-meta-top">
+            <span class="meta-tag">PORTRAIT OFFICIEL</span>
+            <span class="meta-geo">01°08′S 12°03′E</span>
+          </div>
+          <div class="portrait-meta-bottom">
+            <span class="meta-origin">Koulamoutou • Ogooué-Lolo</span>
+            <span class="meta-title">Martine Myphe LOMBA</span>
+          </div>
+        </div>
+        <div class="portrait-border-accent"></div>
+      </div>
+    </div>
+
+    <!-- Colonne Droite : Récit Narratif au Défilement -->
+    <div class="manifesto-text-col">
+      <div class="section-badge">
+        <span class="badge-num">01</span>
+        <span class="badge-separator">/</span>
+        <span class="badge-label">LE MANIFESTE & L'IDENTITÉ</span>
+      </div>
+
+      <h2 class="manifesto-headline">
+        De la terre gabonaise aux écrans du continent.
+      </h2>
+
+      <!-- Paragraphes de la trajectoire -->
+      <div class="narrative-paragraphs">
+        {MANIFESTO_DATA.bioParagraphs.map((para, idx) => (
+          <p class="narrative-p" class:list={[{ 'p-lead': idx === 0 }]}>
+            {para}
+          </p>
+        ))}
+      </div>
+
+      <!-- Citation Signature Haute Couture -->
+      <blockquote class="signature-quote-card">
+        <div class="quote-mark">“</div>
+        <p class="quote-body">
+          {MANIFESTO_DATA.quote}
+        </p>
+        <footer class="quote-author">
+          <span class="author-name">Martine Myphe Lomba</span>
+          <span class="author-alias">— « Émeraude »</span>
+        </footer>
+      </blockquote>
+
+      <!-- Les 3 Piliers de Valeurs -->
+      <div class="values-grid">
+        <div class="value-item">
+          <span class="value-icon">✧</span>
+          <h3 class="value-title">Audace & Liberté</h3>
+          <p class="value-desc">Une parole franche et incisive qui aborde sans détour les réalités sociétales avec la grâce de l'humour.</p>
+        </div>
+
+        <div class="value-item">
+          <span class="value-icon">✧</span>
+          <h3 class="value-title">Élégance Culturelle</h3>
+          <p class="value-desc">Valoriser l'héritage gabonais et les codes esthétiques africains sur les plus prestigieux tapis rouges internationaux.</p>
+        </div>
+
+        <div class="value-item">
+          <span class="value-icon">✧</span>
+          <h3 class="value-title">Empowerment Féminin</h3>
+          <p class="value-desc">Inspirer une génération de jeunes femmes africaines à entreprendre, s'affirmer et maîtriser leur propre récit.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .emeraude-manifesto {
+    position: relative;
+    padding: 9rem 2.5rem;
+    background: linear-gradient(180deg, #030806 0%, #051510 50%, #030806 100%);
+    border-top: 1px solid rgba(16, 185, 129, 0.1);
+  }
+
+  .manifesto-container {
+    max-width: 1380px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 5rem;
+    align-items: start;
+  }
+
+  @media (min-width: 1024px) {
+    .manifesto-container {
+      grid-template-columns: 5fr 7fr;
+      gap: 6rem;
+    }
+  }
+
+  /* Colonne Visuelle Sticky */
+  .manifesto-visual-col {
+    position: relative;
+    width: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    .sticky-portrait-frame {
+      position: sticky;
+      top: 7rem;
+    }
+  }
+
+  .sticky-portrait-frame {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+    aspect-ratio: 3 / 4;
+    background: #081a14;
+    border: 1px solid rgba(212, 175, 55, 0.35);
+  }
+
+  .portrait-glow {
+    position: absolute;
+    top: -20%;
+    left: -20%;
+    width: 140%;
+    height: 140%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.28) 0%, transparent 65%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .portrait-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+    /* Color grading "Émeraude & Or" */
+    filter: contrast(1.05) saturate(1.08) brightness(1.02);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
+  }
+
+  .sticky-portrait-frame:hover .portrait-img {
+    transform: scale(1.04);
+    filter: contrast(1.08) saturate(1.12) brightness(1.04);
+  }
+
+  .portrait-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.75rem;
+    background: linear-gradient(180deg, rgba(3, 8, 6, 0.45) 0%, transparent 40%, rgba(3, 8, 6, 0.9) 100%);
+    pointer-events: none;
+  }
+
+  .portrait-meta-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .meta-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: #f1f5f9;
+    background: rgba(3, 8, 6, 0.65);
+    backdrop-filter: blur(8px);
+    padding: 0.3rem 0.65rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .meta-geo {
+    font-family: monospace;
+    font-size: 0.7rem;
+    color: var(--color-gold-light);
+  }
+
+  .portrait-meta-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .meta-origin {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-gold-light);
+  }
+
+  .meta-title {
+    font-family: var(--font-heading);
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.08em;
+  }
+
+  .portrait-border-accent {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    border-radius: 18px;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* Colonne Narratif */
+  .manifesto-text-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .badge-num {
+    font-family: monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-emeraude-primary);
+  }
+
+  .badge-separator {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .badge-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--color-gold-primary);
+  }
+
+  .manifesto-headline {
+    font-family: var(--font-serif);
+    font-size: clamp(2.25rem, 4vw, 3.75rem);
+    font-weight: 400;
+    line-height: 1.15;
+    color: #ffffff;
+    margin-bottom: 2.5rem;
+    letter-spacing: -0.01em;
+  }
+
+  .narrative-paragraphs {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .narrative-p {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #cbd5e1;
+  }
+
+  .narrative-p.p-lead {
+    font-size: 1.22rem;
+    line-height: 1.75;
+    color: #f1f5f9;
+    font-weight: 400;
+  }
+
+  /* Citation Signature */
+  .signature-quote-card {
+    position: relative;
+    background: rgba(8, 26, 20, 0.65);
+    backdrop-filter: blur(16px);
+    border-left: 3px solid var(--color-emeraude-primary);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0 16px 16px 0;
+    padding: 2.25rem 2.5rem;
+    margin-bottom: 3.5rem;
+  }
+
+  .quote-mark {
+    font-family: var(--font-serif);
+    font-size: 5rem;
+    line-height: 0.7;
+    color: var(--color-emeraude-primary);
+    opacity: 0.35;
+    margin-bottom: 0.5rem;
+  }
+
+  .quote-body {
+    font-family: var(--font-serif);
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
+    font-style: italic;
+    line-height: 1.45;
+    color: #ffffff;
+    margin-bottom: 1.25rem;
+  }
+
+  .quote-author {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .author-name {
+    font-weight: 700;
+    color: var(--color-gold-primary);
+    letter-spacing: 0.05em;
+  }
+
+  .author-alias {
+    color: var(--color-text-muted);
+  }
+
+  /* Grille des Valeurs */
+  .values-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .values-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .value-item {
+    background: rgba(4, 16, 12, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .value-item:hover {
+    transform: translateY(-4px);
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(8, 26, 20, 0.7);
+  }
+
+  .value-icon {
+    display: inline-block;
+    color: var(--color-gold-primary);
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .value-title {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+  }
+
+  .value-desc {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+</style>
