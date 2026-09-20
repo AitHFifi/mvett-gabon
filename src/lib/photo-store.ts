@@ -27,6 +27,7 @@ export interface UserProfile {
   email?: string;
   name: string;
   avatar?: string;
+  role?: 'admin' | 'moderator' | 'user';
   isDemo?: boolean;
 }
 
@@ -44,13 +45,30 @@ export class PhotoStore {
   private constructor() {
     // Si nous sommes dans le navigateur, synchroniser les événements
     if (typeof window !== 'undefined' && isSupabaseConfigured() && supabase) {
-      supabase.auth.onAuthStateChange((event, session) => {
-        const user = session?.user
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        let role: 'admin' | 'moderator' | 'user' | undefined = (session?.user?.app_metadata?.role as any) || undefined;
+        if (session?.user && !role && supabase) {
+          try {
+            const { data: roleData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            if (roleData?.role) {
+              role = roleData.role;
+            }
+          } catch {
+            // Ignorer si table non présente
+          }
+        }
+
+        const user: UserProfile | null = session?.user
           ? {
               id: session.user.id,
               email: session.user.email,
               name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Contributeur',
               avatar: session.user.user_metadata?.avatar_url || '',
+              role,
               isDemo: false,
             }
           : null;
@@ -77,11 +95,27 @@ export class PhotoStore {
       const { data } = await supabase.auth.getSession();
       if (data.session?.user) {
         const u = data.session.user;
+        let role: 'admin' | 'moderator' | 'user' | undefined = (u.app_metadata?.role as any) || undefined;
+        if (!role) {
+          try {
+            const { data: roleData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', u.id)
+              .maybeSingle();
+            if (roleData?.role) {
+              role = roleData.role;
+            }
+          } catch {
+            // Ignorer si table non présente
+          }
+        }
         return {
           id: u.id,
           email: u.email,
           name: u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Contributeur',
           avatar: u.user_metadata?.avatar_url || '',
+          role,
           isDemo: false,
         };
       }
@@ -157,9 +191,10 @@ export class PhotoStore {
   }
 
   public isAdmin(user?: UserProfile | null): boolean {
-    if (!user) return false;
-    const adminEmails = ['alloghofrederic9@gmail.com', 'admin@mvett.ga'];
-    return !!(user.email && adminEmails.includes(user.email.toLowerCase()));
+    if (!user || user.isDemo) return false;
+    if (user.role === 'admin') return true;
+    const adminEmail = 'alloghofrederic9@gmail.com';
+    return !!(user.email && user.email.toLowerCase() === adminEmail);
   }
 
   // ==========================================

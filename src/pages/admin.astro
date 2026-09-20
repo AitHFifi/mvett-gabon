@@ -52,10 +52,6 @@ import { provinces } from '../data/provinces';
             </svg>
             <span>Connexion Google (Compte Curateur)</span>
           </button>
-
-          <button type="button" class="btn-demo-admin" id="btnAdminDemo">
-            ✦ Débloquer en Mode Démo Admin
-          </button>
         </div>
       </div>
     </section>
@@ -630,7 +626,6 @@ import { provinces } from '../data/provinces';
     const userName = document.getElementById('adminUserName');
     const btnLogout = document.getElementById('adminBtnLogout');
     const btnGoogle = document.getElementById('btnAdminGoogle');
-    const btnDemo = document.getElementById('btnAdminDemo');
 
     // Navigation onglets principaux (Catalogue vs Modération)
     const tabNavCatalog = document.getElementById('tabNavCatalog');
@@ -813,25 +808,35 @@ import { provinces } from '../data/provinces';
     }
 
     // ==========================================
-    // AUTHENTIFICATION
+    // AUTHENTIFICATION & CONTRÔLE D'ACCÈS STRICT
     // ==========================================
     async function checkAuth() {
       currentUser = await photoStore.getCurrentUser();
+
+      // Si un utilisateur est connecté mais n'est pas l'administrateur autorisé :
+      // Déconnexion immédiate et redirection vers la page d'accueil avec alerte.
+      if (currentUser && !photoStore.isAdmin(currentUser)) {
+        await photoStore.logout();
+        window.location.replace('/?auth_error=unauthorized');
+        return;
+      }
+
       renderAuthUI();
-      if (currentUser && (photoStore.isAdmin(currentUser) || currentUser.isDemo)) {
+
+      if (currentUser && photoStore.isAdmin(currentUser)) {
         await reloadAllData();
       }
     }
 
     function renderAuthUI() {
-      const isAdmin = currentUser && (photoStore.isAdmin(currentUser) || currentUser.isDemo);
+      const isAdmin = !!(currentUser && photoStore.isAdmin(currentUser));
 
       if (isAdmin) {
         if (authGate) authGate.style.display = 'none';
         if (dashboard) dashboard.style.display = 'block';
         if (userPill) userPill.style.display = 'inline-flex';
-        if (userName) userName.textContent = `${currentUser.name} (Admin)`;
-        if (userAvatar && currentUser.avatar) userAvatar.src = currentUser.avatar;
+        if (userName) userName.textContent = `${currentUser?.name} (Admin)`;
+        if (userAvatar && currentUser?.avatar) userAvatar.src = currentUser.avatar;
       } else {
         if (authGate) authGate.style.display = 'flex';
         if (dashboard) dashboard.style.display = 'none';
@@ -840,6 +845,11 @@ import { provinces } from '../data/provinces';
     }
 
     async function reloadAllData() {
+      if (!currentUser || !photoStore.isAdmin(currentUser)) {
+        window.location.replace('/?auth_error=unauthorized');
+        return;
+      }
+
       // 1. Charger tout le catalogue (y compris archivées)
       allCatalogPhotos = await photoStore.getCatalogPhotos({ includeArchived: true });
       // 2. Charger les photos de modération
@@ -925,11 +935,19 @@ import { provinces } from '../data/provinces';
         return `
           <article class="catalog-card ${isArchived ? 'archived' : ''}" data-photo-id="${photo.id}">
             <div class="catalog-thumb" data-preview-id="${photo.id}" title="Cliquer pour tester dans le simulateur 3D">
-              <img src="${photo.image_url}" alt="${photo.title}" loading="lazy" class="thumb-img" />
+              <img 
+                src="${photo.image_url}" 
+                alt="${photo.title}" 
+                loading="lazy" 
+                class="thumb-img" 
+                onload="this.classList.add('loaded'); if (this.naturalHeight > this.naturalWidth) this.closest('.catalog-thumb')?.querySelector('.badge-portrait')?.classList.remove('hidden');" 
+                onerror="this.onerror=null; this.closest('.catalog-thumb')?.classList.add('has-error');" 
+              />
               
               <div class="thumb-badges-top">
                 <span class="badge-prov">${provName}</span>
                 <span class="badge-order">#${displayOrder}</span>
+                <span class="badge-portrait hidden" title="Format vertical (9:16) - Adaptatif 3D">📱 9:16</span>
               </div>
 
               <div class="thumb-badges-bottom">
@@ -937,6 +955,12 @@ import { provinces } from '../data/provinces';
                   ${isOfficial ? '★ Officielle' : '👥 Citoyenne'}
                 </span>
                 ${isArchived ? '<span class="badge-archived">📦 Archivée</span>' : ''}
+              </div>
+
+              <div class="thumb-fallback">
+                <span class="fallback-icon">📷</span>
+                <span class="fallback-text">Image non disponible</span>
+                <span class="fallback-sub">${provName}</span>
               </div>
 
               <div class="thumb-overlay-hint">
@@ -1160,11 +1184,23 @@ import { provinces } from '../data/provinces';
         return `
           <article class="submission-card ${photo.status}" data-photo-id="${photo.id}">
             <div class="card-thumb" data-preview-id="${photo.id}" title="Cliquer pour prévisualiser">
-              <img src="${photo.image_url}" alt="${photo.title}" loading="lazy" class="thumb-img" />
+              <img 
+                src="${photo.image_url}" 
+                alt="${photo.title}" 
+                loading="lazy" 
+                class="thumb-img" 
+                onload="this.classList.add('loaded'); if (this.naturalHeight > this.naturalWidth) this.closest('.card-thumb')?.querySelector('.badge-portrait')?.classList.remove('hidden');" 
+                onerror="this.onerror=null; this.closest('.card-thumb')?.classList.add('has-error');" 
+              />
               <div class="card-status-badge ${photo.status}">
                 ${isApproved ? '✓ Approuvée' : isPending ? '⏳ En Attente' : '✕ Rejetée'}
               </div>
               <span class="card-province-badge">${provName}</span>
+              <span class="badge-portrait hidden" title="Format vertical (9:16)">📱 9:16</span>
+              <div class="thumb-fallback">
+                <span class="fallback-icon">📷</span>
+                <span class="fallback-text">Image non disponible</span>
+              </div>
               <div class="thumb-overlay-hint">
                 <span>👁 Prévisualiser</span>
               </div>
@@ -1352,6 +1388,10 @@ import { provinces } from '../data/provinces';
 
     adminAddForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!photoStore.isAdmin(currentUser)) {
+        window.location.replace('/?auth_error=unauthorized');
+        return;
+      }
       if (!addProvinceSelect || !addTitleInput || !addLocationInput) return;
 
       const provinceId = addProvinceSelect.value;
@@ -1483,6 +1523,10 @@ import { provinces } from '../data/provinces';
 
     adminEditForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!photoStore.isAdmin(currentUser)) {
+        window.location.replace('/?auth_error=unauthorized');
+        return;
+      }
       const pId = editPhotoId?.value;
       if (!pId) return;
 
@@ -1716,11 +1760,6 @@ import { provinces } from '../data/provinces';
       await photoStore.loginWithGoogle();
     });
 
-    btnDemo?.addEventListener('click', async () => {
-      await photoStore.loginAsGuest('Conservateur MVETT', 'alloghofrederic9@gmail.com');
-      await checkAuth();
-    });
-
     btnLogout?.addEventListener('click', async () => {
       await photoStore.logout();
       await checkAuth();
@@ -1743,7 +1782,7 @@ import { provinces } from '../data/provinces';
   });
 </script>
 
-<style>
+<style is:global>
   .admin-wrapper {
     min-height: 100vh;
     background: #0d1110;
@@ -2143,22 +2182,28 @@ import { provinces } from '../data/provinces';
     gap: 1.8rem;
   }
 
+  @keyframes thumbShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
   .catalog-card {
     max-width: 360px;
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #141917;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
   .catalog-card:hover {
-    border-color: rgba(255, 255, 255, 0.28);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
   }
 
   .catalog-card.archived {
@@ -2172,7 +2217,9 @@ import { provinces } from '../data/provinces';
     width: 100%;
     aspect-ratio: 16 / 10;
     overflow: hidden;
-    background: #000000;
+    background: #0f1412 linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.02) 75%);
+    background-size: 200% 100%;
+    animation: thumbShimmer 2.2s infinite ease-in-out;
     cursor: pointer;
   }
 
@@ -2180,11 +2227,80 @@ import { provinces } from '../data/provinces';
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.35s ease;
+    opacity: 0;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    display: block;
+  }
+
+  .catalog-thumb img.loaded {
+    opacity: 1;
   }
 
   .catalog-thumb:hover img {
     transform: scale(1.05);
+  }
+
+  /* Fallback */
+  .thumb-fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    background: #111715;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    z-index: 1;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .catalog-thumb.has-error .thumb-fallback,
+  .card-thumb.has-error .thumb-fallback {
+    display: flex;
+  }
+
+  .catalog-thumb.has-error img,
+  .card-thumb.has-error img {
+    display: none !important;
+  }
+
+  .fallback-icon {
+    font-size: 1.6rem;
+    opacity: 0.75;
+  }
+
+  .fallback-text {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .fallback-sub {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  /* Badge portrait 9:16 */
+  .badge-portrait {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.88);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .badge-portrait.hidden {
+    display: none !important;
   }
 
   .thumb-badges-top {
@@ -2575,21 +2691,27 @@ import { provinces } from '../data/provinces';
   .submission-card {
     max-width: 360px;
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #141917;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: transform 0.2s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .submission-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
   }
 
   .submission-card.pending {
-    border-left: 3px solid #eab308;
+    border-left: 4px solid #eab308;
   }
 
   .submission-card.approved {
-    border-left: 3px solid #22c55e;
+    border-left: 4px solid #22c55e;
   }
 
   .card-thumb {
@@ -2597,7 +2719,9 @@ import { provinces } from '../data/provinces';
     width: 100%;
     aspect-ratio: 16 / 10;
     overflow: hidden;
-    background: #000000;
+    background: #0f1412 linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.02) 75%);
+    background-size: 200% 100%;
+    animation: thumbShimmer 2.2s infinite ease-in-out;
     cursor: pointer;
   }
 
@@ -2605,6 +2729,17 @@ import { provinces } from '../data/provinces';
     width: 100%;
     height: 100%;
     object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    display: block;
+  }
+
+  .card-thumb img.loaded {
+    opacity: 1;
+  }
+
+  .card-thumb:hover img {
+    transform: scale(1.05);
   }
 
   .card-status-badge {

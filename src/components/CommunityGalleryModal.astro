@@ -106,17 +106,39 @@ import { provinces } from '../data/provinces';
         return `
           <article class="photo-card" data-photo-id="${photo.id}" style="--bg-accent: ${photo.background_color};">
             <div class="card-media">
-              <img src="${photo.image_url}" alt="${photo.title}" loading="lazy" />
+              <img 
+                src="${photo.image_url}" 
+                alt="${photo.title}" 
+                loading="lazy" 
+                class="photo-img" 
+                onload="this.classList.add('loaded'); if (this.naturalHeight > this.naturalWidth) this.closest('.card-media')?.querySelector('.badge-portrait')?.classList.remove('hidden');" 
+                onerror="this.onerror=null; this.closest('.card-media')?.classList.add('has-error');" 
+              />
+              
+              <div class="card-gradient-scrim"></div>
+
+              <div class="media-top-badges">
+                <span class="card-badge">${provName}</span>
+                <span class="badge-portrait hidden" title="Format vertical (9:16) - Adaptatif 3D">📱 9:16</span>
+              </div>
+
+              <div class="thumb-fallback">
+                <span class="fallback-icon">📷</span>
+                <span class="fallback-text">Image non disponible</span>
+                <span class="fallback-sub">${provName}</span>
+              </div>
+
               <div class="card-overlay">
                 <button type="button" class="btn-view-3d" data-photo-id="${photo.id}">
                   Voir en 3D ↗
                 </button>
               </div>
-              <span class="card-badge">${provName}</span>
             </div>
 
             <div class="card-info">
-              <h4 class="card-title">${photo.title}</h4>
+              <div class="card-header-row">
+                <h4 class="card-title">${photo.title}</h4>
+              </div>
               <p class="card-location">${photo.location}</p>
               ${photo.caption ? `<p class="card-caption">« ${photo.caption} »</p>` : ''}
               
@@ -229,7 +251,7 @@ import { provinces } from '../data/provinces';
   });
 </script>
 
-<style>
+<style is:global>
   .gallery-drawer-backdrop {
     position: fixed;
     inset: 0;
@@ -399,20 +421,26 @@ import { provinces } from '../data/provinces';
     gap: 1.6rem;
   }
 
+  @keyframes galleryShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
   .photo-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 14px;
+    background: #141917;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
     transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   }
 
   .photo-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
     border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   }
 
   .card-media {
@@ -420,29 +448,130 @@ import { provinces } from '../data/provinces';
     width: 100%;
     aspect-ratio: 16 / 10;
     overflow: hidden;
-    background: #0d1110;
+    background: #0f1412 linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.02) 75%);
+    background-size: 200% 100%;
+    animation: galleryShimmer 2.2s infinite ease-in-out;
   }
 
   .card-media img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.4s ease;
+    opacity: 0;
+    transition: opacity 0.35s ease, transform 0.4s ease;
+    display: block;
+  }
+
+  .card-media img.loaded {
+    opacity: 1;
   }
 
   .photo-card:hover .card-media img {
-    transform: scale(1.05);
+    transform: scale(1.06);
+  }
+
+  .card-gradient-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(20, 25, 23, 0.75) 0%, rgba(20, 25, 23, 0.15) 45%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .media-top-badges {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2;
+  }
+
+  .card-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.22rem 0.6rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  /* Badge portrait 9:16 */
+  .badge-portrait {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.88);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .badge-portrait.hidden {
+    display: none !important;
+  }
+
+  /* Fallback */
+  .thumb-fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    background: #111715;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    z-index: 1;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .card-media.has-error .thumb-fallback {
+    display: flex;
+  }
+
+  .card-media.has-error img {
+    display: none !important;
+  }
+
+  .fallback-icon {
+    font-size: 1.6rem;
+    opacity: 0.75;
+  }
+
+  .fallback-text {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .fallback-sub {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.45);
   }
 
   .card-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.4);
     opacity: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: opacity 0.25s ease;
+    z-index: 3;
   }
 
   .photo-card:hover .card-overlay {
@@ -454,47 +583,36 @@ import { provinces } from '../data/provinces';
     color: #121615;
     border: none;
     font-family: var(--font-mono);
-    font-size: 0.74rem;
-    font-weight: 600;
-    padding: 0.45rem 0.95rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 0.55rem 1.1rem;
     border-radius: 999px;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    transition: transform 0.15s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    transition: transform 0.15s ease, background-color 0.2s ease;
   }
 
   .btn-view-3d:hover {
     transform: scale(1.06);
-  }
-
-  .card-badge {
-    position: absolute;
-    bottom: 0.6rem;
-    left: 0.6rem;
-    font-family: var(--font-mono);
-    font-size: 0.66rem;
-    font-weight: 600;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(8px);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #f1f5f9;
   }
 
   .card-info {
-    padding: 1.1rem;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
     flex: 1;
+    background: #141917;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .card-title {
     font-family: var(--font-mono);
-    font-size: 0.92rem;
+    font-size: 0.98rem;
     font-weight: 600;
     margin-bottom: 0.25rem;
     color: #ffffff;
+    line-height: 1.35;
   }
 
   .card-location {

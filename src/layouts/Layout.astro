@@ -25,7 +25,63 @@ const {
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!-- Toast d'Alerte / Notification Globale (Accès refusé, etc.) -->
+    <div id="globalToast" class="global-toast" role="alert" aria-live="assertive" style="display: none;">
+      <div class="toast-content">
+        <div class="toast-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div class="toast-body">
+          <div class="toast-title" id="toastTitle">Accès Refusé</div>
+          <p class="toast-message" id="toastMessage">Seul le conservateur officiel (alloghofrederic9@gmail.com) est autorisé à accéder à l'espace administration.</p>
+        </div>
+        <button type="button" class="toast-close" id="btnToastClose" aria-label="Fermer la notification">✕</button>
+      </div>
+    </div>
+
     <slot />
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const authError = urlParams.get('auth_error');
+
+        if (authError === 'unauthorized') {
+          const toast = document.getElementById('globalToast');
+          const btnClose = document.getElementById('btnToastClose');
+
+          if (toast) {
+            toast.style.display = 'flex';
+            // Animation d'entrée fluide
+            requestAnimationFrame(() => {
+              toast.classList.add('visible');
+            });
+
+            const dismissToast = () => {
+              toast.classList.remove('visible');
+              setTimeout(() => {
+                toast.style.display = 'none';
+              }, 400);
+            };
+
+            btnClose?.addEventListener('click', dismissToast);
+
+            // Fermeture automatique après 6 secondes
+            setTimeout(dismissToast, 6000);
+
+            // Nettoyage discret de l'URL sans rechargement
+            urlParams.delete('auth_error');
+            const newQuery = urlParams.toString();
+            const newUrl = window.location.pathname + (newQuery ? '?' + newQuery : '') + window.location.hash;
+            window.history.replaceState({}, document.title, newUrl);
+          }
+        }
+      });
+    </script>
   </body>
 </html>
 
@@ -82,5 +138,88 @@ const {
     pointer-events: none !important;
     visibility: hidden !important;
     transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  /* Global Toast Notification */
+  .global-toast {
+    position: fixed;
+    top: 2rem;
+    left: 50%;
+    transform: translate(-50%, -20px);
+    z-index: 999999;
+    max-width: 92vw;
+    width: 480px;
+    background: rgba(18, 22, 20, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 178, 92, 0.35);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(239, 68, 68, 0.15);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .global-toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+  }
+
+  .toast-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    width: 100%;
+  }
+
+  .toast-icon {
+    flex-shrink: 0;
+    color: #f87171;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 2px;
+  }
+
+  .toast-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .toast-title {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #f87171;
+    margin-bottom: 0.25rem;
+  }
+
+  .toast-message {
+    font-family: var(--font-main);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: #e2e8f0;
+    margin: 0;
+  }
+
+  .toast-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+  }
+
+  .toast-close:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
   }
 </style>
