@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import { provinces } from '../data/provinces';
 ---
 
-<Layout title="MVETT — Curation & Gestion du Diaporama 3D">
+<Layout title="MVETT — Curation & Gestion du Diaporama 3D" allowScroll={true}>
   <div class="admin-wrapper" id="adminWrapper">
     
     <!-- Top Navigation Header -->
@@ -1783,8 +1783,20 @@ import { provinces } from '../data/provinces';
 </script>
 
 <style is:global>
+  html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+    overscroll-behavior: auto !important;
+  }
+
   .admin-wrapper {
     min-height: 100vh;
+    height: auto !important;
+    overflow-y: visible !important;
     background: #0d1110;
     color: #ffffff;
     display: flex;

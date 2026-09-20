@@ -2,16 +2,18 @@
 interface Props {
   title?: string;
   description?: string;
+  allowScroll?: boolean;
 }
 
 const {
   title = "MVETT — Les 9 Provinces du Gabon",
-  description = "Une exploration photographique et cinématique des 9 provinces du Gabon, inspirée par Smörgåsbord Studio."
+  description = "Une exploration photographique et cinématique des 9 provinces du Gabon, inspirée par Smörgåsbord Studio.",
+  allowScroll = false
 } = Astro.props;
 ---
 
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class={allowScroll ? "allow-scroll" : ""}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -24,7 +26,7 @@ const {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
-  <body>
+  <body class={allowScroll ? "allow-scroll" : ""}>
     <!-- Toast d'Alerte / Notification Globale (Accès refusé, etc.) -->
     <div id="globalToast" class="global-toast" role="alert" aria-live="assertive" style="display: none;">
       <div class="toast-content">
@@ -112,6 +114,17 @@ const {
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  html.allow-scroll,
+  body.allow-scroll {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+    overscroll-behavior: auto !important;
   }
 
   /* Universal custom scrollbar */
